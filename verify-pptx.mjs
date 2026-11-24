@@ -47,3 +47,10 @@ test('vendored browser bundle exposes the constructor used by the app',()=>{
  assert.equal(typeof context.PptxGenJS,'function');assert.equal(typeof context.JSZip,'function');
  const app=fs.readFileSync(new URL('./app.mjs',import.meta.url),'utf8');assert.ok(app.includes('buildPptx(window.PptxGenJS,'));
 });
+
+test('domestic figure and slide notes retain their separate Korean official source',async()=>{
+ const z=await zip(buildPptx(PptxGenJS,model,{}, {scope:'figures',figureId:'domestic-years'}));
+ const slide=await z.file('ppt/slides/slide1.xml').async('string');const notes=await z.file('ppt/notesSlides/notesSlide1.xml').async('string');
+ assert.ok(slide.includes('한국교통안전공단'));assert.ok(!slide.includes('NHTSA'));
+ assert.ok(notes.includes('한국교통안전공단'));assert.ok(!notes.includes('NHTSA'));
+});
