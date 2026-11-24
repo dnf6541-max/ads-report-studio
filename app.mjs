@@ -292,9 +292,9 @@ function lockExport(){
 async function exportPPTX(options){
  const unlock=lockExport();if(!unlock)return;
  try{
-  if(!window.pptxgen)throw new Error('PPTX 모듈을 아직 불러오지 못했습니다. 잠시 후 다시 시도하세요.');
+  if(!window.PptxGenJS)throw new Error('PPTX 모듈을 아직 불러오지 못했습니다. 잠시 후 다시 시도하세요.');
   notify('편집 가능한 PPTX를 만들고 있습니다.');
-  const pptx=buildPptx(window.pptxgen,state.model,state.filter,options);
+  const pptx=buildPptx(window.PptxGenJS,state.model,state.filter,options);
   await pptx.writeFile({fileName:exportName(options.scope==='figures'?(options.figureId||'전체그림'):(options.tab||'5페이지_리포트'))+'.pptx',compression:true});
   notify('PPTX를 저장했습니다. PowerPoint에서 글자·표·차트·개략도를 편집할 수 있습니다.');
  }catch(e){notify(`PPTX 생성 실패: ${e.message}`);}finally{unlock();}
