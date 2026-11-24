@@ -20,7 +20,7 @@ export function buildPptx(PptxGenJS,model,filter={},options={}) {
  const line=(s,x1,y1,x2,y2,color=C.line,width=.8,extra={})=>s.addShape(S.line,{x:Math.min(x1,x2),y:Math.min(y1,y2),w:Math.abs(x2-x1),h:Math.abs(y2-y1),flipH:x2<x1,flipV:y2<y1,line:{color,width,...extra}});
  const section=(s,n,title,x,y,w)=>{txt(s,n,x,y,.43,.32,20,{bold:true,color:C.blue});txt(s,title,x+.48,y,w-.48,.34,18,{bold:true});line(s,x,y+.43,x+w,y+.43);};
  const footer=(s,text,page)=>{line(s,.5,8.5,15.5,8.5);txt(s,text,.5,8.58,14.2,.3,9.5,{color:C.muted});txt(s,String(page).padStart(2,'0'),15,8.57,.5,.26,12,{bold:true,align:'right'});};
- const base=(title,sub,page,chip='')=>{const s=pptx.addSlide();s.background={color:C.white};rect(s,.5,.25,15,.055,C.navy);txt(s,title,.5,.47,13.1,.49,28,{bold:true});txt(s,sub,.5,1.04,14.5,.29,14,{color:C.muted});if(chip)txt(s,chip,12.25,.53,3.2,.3,11,{color:C.muted,align:'right'});footer(s,title===names.domestic?'출처: 한국교통안전공단 · 2025.11.28 발표 · 2025년 9월까지 · 미국 SGO와 별도':`자료: NHTSA SGO ADS 제공 자료 · ${period(filter)} · 차량별 사고보고 기준 · 사고율·법적 과실과 구분`,page);return s;};
+ const base=(title,sub,page,chip='',domestic=false)=>{const s=pptx.addSlide();s.background={color:C.white};rect(s,.5,.25,15,.055,C.navy);txt(s,title,.5,.47,13.1,.49,28,{bold:true});txt(s,sub,.5,1.04,14.5,.29,14,{color:C.muted});if(chip)txt(s,chip,12.25,.53,3.2,.3,11,{color:C.muted,align:'right'});footer(s,(domestic||title===names.domestic)?'출처: 한국교통안전공단 · 2025.11.28 발표 · 2025년 9월까지 · 미국 SGO와 별도':`자료: NHTSA SGO ADS 제공 자료 · ${period(filter)} · 차량별 사고보고 기준 · 사고율·법적 과실과 구분`,page);return s;};
  const empty=(s,x=.6,y=2,w=10.3,h=4)=>{txt(s,'선택 범위에 확인된 사고가 없습니다',x,y,w,.5,24,{bold:true});txt(s,'기간·회사를 변경해 주세요. 자료가 없을 때 예시 수치를 채우지 않습니다.',x,y+.8,w,h-.8,16,{color:C.muted});};
  function bar(s,f,x,y,w,h,fs=13) {
    if(!f||!f.items.length||!f.items.some(v=>v.count)){txt(s,'해당 자료 없음',x,y+.2,w,.4,fs,{color:C.muted});return;}
@@ -40,7 +40,7 @@ export function buildPptx(PptxGenJS,model,filter={},options={}) {
    items.forEach(([head,body],i)=>{const y=2.37+i*1.42;txt(s,String(i+1).padStart(2,'0'),11.63,y,.36,.3,14,{bold:true,color:C.teal});txt(s,head,12.02,y,3.45,.37,17,{bold:true});txt(s,body,11.63,y+.45,3.85,.76,14,{color:C.muted,breakLine:false});line(s,11.63,y+1.25,15.5,y+1.25);});
    rect(s,11.63,7.25,3.87,.95,'EAF5F2');rect(s,11.63,7.25,.04,.95,C.teal);txt(s,note,11.8,7.38,3.5,.65,12.5,{color:C.muted});
  }
- function notes(s,used,extra='') {s.addNotes(`자료: NHTSA SGO ADS 제공 CSV와 기존 검수 기록\n범위: ${period(filter)}\n사고 당시 ADS 확인: ${rows.length}건 / 운행상태 비교: ${ads.length}건\n단위: 차량별 사고보고. 사고율·과실·감소율을 의미하지 않음.\n${extra}\n${used.map(f=>JSON.stringify({id:f.id,title:f.title,note:f.note,data:figureDataRows(f)})).join('\n')}`);}
+ function notes(s,used,extra='') {if(used.length&&used.every(f=>f.tab==='domestic')){s.addNotes(`자료: 한국교통안전공단 · 2025.11.28 발표\n범위: 2022~2025년 9월 공식 발표 스냅샷. 미국 필터와 별도.\n출처: ${model.pkg.domestic.sourceUrl}\n${used.map(f=>JSON.stringify({id:f.id,title:f.title,note:f.note,data:figureDataRows(f)})).join('\n')}`);return;}s.addNotes(`자료: NHTSA SGO ADS 제공 CSV와 기존 검수 기록\n범위: ${period(filter)}\n사고 당시 ADS 확인: ${rows.length}건 / 운행상태 비교: ${ads.length}건\n단위: 차량별 사고보고. 사고율·과실·감소율을 의미하지 않음.\n${extra}\n${used.map(f=>JSON.stringify({id:f.id,title:f.title,note:f.note,data:figureDataRows(f)})).join('\n')}`);}
  // Requested accident diagrams use editable native PowerPoint objects.
  function diagram(s,type,x,y,w,h) {
    const X=v=>x+v/300*w,Y=v=>y+v/230*h;
@@ -62,7 +62,7 @@ export function buildPptx(PptxGenJS,model,filter={},options={}) {
    txt(s,`${f.record.company} · ${f.record.month}`,tx,y+.63,tw,.3,10,{color:C.muted});txt(s,'사고 상황',tx,y+.98,tw,.27,13,{bold:true,color:C.blue});txt(s,f.case.summary,tx,y+1.31,tw,.9,14);txt(s,'확인할 점',tx,y+2.25,tw,.24,12,{bold:true,color:C.blue});txt(s,f.case.caution,tx,y+2.53,tw,h-2.65,10.5,{color:C.muted});
  }
  function mainPage(tab,index) {
-   const s=base(names[tab],tab==='domestic'?'국내 공식 발표 · 미국 분석과 별도':'실제 보고자료의 집계와 사고 경위 분석',index,tab==='domestic'?'집계 기준 2025.9':`N=${fmt(tab==='status'?ads.length:tab==='vru'?a.vru.length:rows.length)}`);
+   const s=base(names[tab],tab==='domestic'?'국내 공식 발표 · 미국 분석과 별도':'실제 보고자료의 집계와 사고 경위 분석',index,tab==='domestic'?'집계 기준 2025.9':`N=${fmt(tab==='status'?ads.length:tab==='vru'?a.vru.length:tab==='cases'?rows.filter(r=>['serious','fatal'].includes(r.severity)).length:rows.length)}`);
    if(tab!=='domestic'&&(tab==='status'?!ads.length:!rows.length)){empty(s);notes(s,[]);return;}
    if(tab==='overview'){
      section(s,'01','충돌대상별 사고 구성',.55,1.47,10.5);bar(s,byId.get('counterparts'),.55,1.97,10.55,2.75,13);
@@ -115,7 +115,7 @@ export function buildPptx(PptxGenJS,model,filter={},options={}) {
    }
  }
  function figurePage(f,index) {
-   const s=base(f.title,f.tab==='domestic'?'국내 공식 발표자료':'선택한 분석대상에서 계산한 개별 그림',index,f.denominator!=null?`분모 ${fmt(f.denominator)}건`:'');
+   const s=base(f.title,f.tab==='domestic'?'국내 공식 발표자료':'선택한 분석대상에서 계산한 개별 그림',index,f.denominator!=null?`분모 ${fmt(f.denominator)}건`:'',f.tab==='domestic');
    if(f.kind==='bar')bar(s,f,.65,1.65,14.7,5.92,20);
    else if(f.kind==='table')table(s,f,.65,1.95,14.7,Math.min(4.9,Math.max(2.4,(f.rows.length+1)*.55)),19);
    else if(f.kind==='grouped'){f.groups.forEach((g,i)=>{const y=1.9+i*1.55;txt(s,`${g.label} · ${fmt(g.total)}건`,.8,y,14,.45,22,{bold:true});stack(s,g.items,g.total,.8,y+.6,14.2,.5);txt(s,g.items.filter(x=>x.count).map(x=>`${x.label} ${x.count}건 (${pct(x.count,g.total)}%)`).join(' / '),.85,y+1.16,14.1,.3,12,{color:C.muted});});}
