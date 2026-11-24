@@ -1,11 +1,14 @@
+import {contributionSummary,contributionInsights} from './contribution.mjs?v=20261124.10';
+import {sceneFor,locationInfo} from './scenes.mjs?v=20261124.10';
 /* Editable PowerPoint export. Native charts include their Excel workbooks. */
-import {aggregate,filtered,pct,SEVERITY,CAR,VRU,countBy} from './analysis.mjs';
-import {figureCatalog,figureDataRows,transitionSummary,surfaceSummary} from './supplement.mjs';
+import {aggregate,filtered,pct,SEVERITY,CAR,VRU,countBy} from './analysis.mjs?v=20261124.10';
+import {figureCatalog,figureDataRows,transitionSummary,surfaceSummary} from './supplement.mjs?v=20261124.10';
 
+import {insightSummary} from './extended.mjs?v=20261124.10';
 const C={navy:'193D50',teal:'148B82',blue:'277EAE',sky:'5AAAC8',amber:'D58A3B',muted:'637D8B',line:'D7E2E8',wash:'F3F7F9',grey:'83949E',white:'FFFFFF'};
 const palette=[C.teal,C.blue,C.sky,C.amber,C.grey,'B3C1C8'];
 const sevColor={none:C.teal,minor:'358EBC',moderate:'DF9F44',serious:'CB6A40',fatal:'AD4357',unknown:'B4BFC8'};
-const names={overview:'ADS 사고유형 및 충돌특성',cases:'ADS 중상·사망 사고 사례',status:'ADS 운행상태별 사고 특성',vru:'보행자·자전거·이륜차 등 사고',domestic:'국내 자율주행차 사고현황 및 운행 특성'};
+const names={overview:'ADS 사고유형 및 충돌특성',cases:'ADS 중상·사망 사고 사례',status:'ADS 운행상태별 사고 특성',vru:'보행자·자전거·이륜차 등 사고',domestic:'국내 자율주행차 사고현황 및 운행 특성',contribution:'자율차 기여 가능성이 있는 사고의 우선검토'};
 const tabs=Object.keys(names),font='Malgun Gothic';
 const fmt=n=>Number(n).toLocaleString('ko-KR');
 const period=f=>`${f.from||f.to?`${f.from||'자료 시작'} ~ ${f.to||'자료 종료'}`:'전체 기간'} · ${f.company||'전체 보고 회사'}`;
@@ -37,10 +40,10 @@ export function buildPptx(PptxGenJS,model,filter={},options={}) {
  }
  function insights(s,title,items,note) {
    line(s,11.35,1.5,11.35,8.25);txt(s,title,11.63,1.62,3.85,.43,23,{bold:true});
-   items.forEach(([head,body],i)=>{const y=2.37+i*1.42;txt(s,String(i+1).padStart(2,'0'),11.63,y,.36,.3,14,{bold:true,color:C.teal});txt(s,head,12.02,y,3.45,.37,17,{bold:true});txt(s,body,11.63,y+.45,3.85,.76,14,{color:C.muted,breakLine:false});line(s,11.63,y+1.25,15.5,y+1.25);});
+   items.forEach(([head,body],i)=>{const y=2.37+i*1.42;txt(s,String(i+1).padStart(2,'0'),11.63,y,.36,.3,14,{bold:true,color:C.teal});txt(s,head,12.02,y,3.45,.37,17,{bold:true});txt(s,body,11.63,y+.45,3.85,.83,12.7,{color:C.muted,breakLine:false});line(s,11.63,y+1.25,15.5,y+1.25);});
    rect(s,11.63,7.25,3.87,.95,'EAF5F2');rect(s,11.63,7.25,.04,.95,C.teal);txt(s,note,11.8,7.38,3.5,.65,12.5,{color:C.muted});
  }
- function notes(s,used,extra='') {if(used.length&&used.every(f=>f.tab==='domestic')){s.addNotes(`자료: 한국교통안전공단 · 2025.11.28 발표\n범위: 2022~2025년 9월 공식 발표 스냅샷. 미국 필터와 별도.\n출처: ${model.pkg.domestic.sourceUrl}\n${used.map(f=>JSON.stringify({id:f.id,title:f.title,note:f.note,data:figureDataRows(f)})).join('\n')}`);return;}s.addNotes(`자료: NHTSA SGO ADS 제공 CSV와 기존 검수 기록\n범위: ${period(filter)}\n사고 당시 ADS 확인: ${rows.length}건 / 운행상태 비교: ${ads.length}건\n단위: 차량별 사고보고. 사고율·과실·감소율을 의미하지 않음.\n${extra}\n${used.map(f=>JSON.stringify({id:f.id,title:f.title,note:f.note,data:figureDataRows(f)})).join('\n')}`);}
+ function notes(s,used,extra='') {if(used.length&&used.every(f=>f.tab==='domestic')){s.addNotes(`자료: 한국교통안전공단 · 2025.11.28 발표\n범위: 2022~2025년 9월 공식 발표 스냅샷. 미국 필터와 별도.\n출처: ${model.pkg.domestic.sourceUrl}\n${used.map(f=>JSON.stringify({id:f.id,title:f.title,insight:f.insight,note:f.note,data:figureDataRows(f)})).join('\n')}`);return;}s.addNotes(`자료: NHTSA SGO ADS 제공 CSV와 기존 검수 기록\n범위: ${period(filter)}\n사고 당시 ADS 확인: ${rows.length}건 / 운행상태 비교: ${ads.length}건\n단위: 차량별 사고보고. 사고율·과실·감소율을 의미하지 않음.\n${extra}\n${used.map(f=>JSON.stringify({id:f.id,title:f.title,insight:f.insight,note:f.note,data:figureDataRows(f)})).join('\n')}`);}
  // Requested accident diagrams use editable native PowerPoint objects.
  function diagram(s,type,x,y,w,h) {
    const X=v=>x+v/300*w,Y=v=>y+v/230*h;
@@ -56,13 +59,24 @@ export function buildPptx(PptxGenJS,model,filter={},options={}) {
    else if(type==='motorcycle-secondary'){box(30,0,240,230,'D7E0E5');line(s,X(141),Y(0),X(141),Y(230),C.white,1,{dashType:'dash'});car(206,67);car(91,150,0,C.grey,'승용');s.addShape(S.ellipse,{x:X(173),y:Y(129),w:18/300*w,h:32/230*h,fill:{color:C.grey},line:{color:C.grey}});arrow(182,195,182,169);arrow(206,18,262,18);hit(193,108);hit(126,133);label(5,6,'우회전 감속');label(15,204,'① 후부 접촉  ② 후속 충격',285);}
    else {box(25,30,250,48,'DCEEEA');label(44,44,'보고된 사고 상황',220);arrow(150,85,150,110);box(25,122,250,48,'E1EAF0');label(44,136,'접촉 순서·피해 확인',220);label(23,195,'상세 진로는 원문 참고',250);}
  }
+ function nativeScene(s,r,x,y,w,h){
+  const sc=sceneFor(r,model.pkg.sceneOverrides?.[r.id]),loc=locationInfo(r,model.pkg.sceneOverrides?.[r.id]);const X=v=>x+v/800*w,Y=v=>y+v/450*h;
+  const box=(a,b,c,d,fill)=>rect(s,X(a),Y(b),c/800*w,d/450*h,fill);
+  box(0,0,800,450,'F3F7F9');box(235,25,330,365,'DCE5E9');if(sc.layout==='intersection')box(70,160,660,155,'DCE5E9');
+  const ln=(a,b,c,d,color='FFFFFF',width=1,extra={})=>line(s,X(a),Y(b),X(c),Y(d),color,width,extra);
+  if(sc.layout==='intersection'){ln(400,25,400,150,'BDAC65',1.3);ln(400,320,400,390,'BDAC65',1.3);ln(70,238,225,238,'BDAC65',1.3);ln(570,238,730,238,'BDAC65',1.3);}else ln(400,25,400,390,'BDAC65',1.3);
+  sc.paths.forEach(p=>ln(...p,C.amber,1.6,{endArrowType:'triangle'}));
+  const actor=(p,label,color)=>{const [a,b,rot]=p,noncar=/보행자|자전거|이륜차|시설물|관련 대상/.test(label);s.addShape(noncar?S.ellipse:S.roundRect,{x:X(a-28),y:Y(b-(noncar?28:48)),w:56/800*w,h:(noncar?56:96)/450*h,rotate:noncar?0:rot,fill:{color:noncar?C.white:color},line:{color,width:1}});txt(s,label,X(a-70),Y(b-10),140/800*w,22/450*h,Math.max(5,w*1.4),{color:noncar?color:C.white,bold:true,align:'center',fill:{color:noncar?C.white:color}});};
+  actor(sc.ads,'ADS',C.teal);actor(sc.cp,sc.cpLabel,C.grey);if(sc.third)actor(sc.third,sc.thirdLabel||'관련 대상','8899A2');sc.hits.forEach((p,i)=>{s.addShape(S.ellipse,{x:X(p[0]-12),y:Y(p[1]-12),w:24/800*w,h:24/450*h,fill:{color:C.amber},line:{color:C.white,width:.7}});});
+  txt(s,sc.context,X(12),Y(400),776/800*w,35/450*h,Math.max(5,w*1.15),{color:C.navy});txt(s,`${loc.city} ${loc.state} · ${loc.level}`,X(12),Y(433),776/800*w,18/450*h,Math.max(4.5,w),{color:C.muted});
+ }
  function casePanel(s,f,x,y,w,h) {
    rect(s,x,y,w,h,C.white,C.line);rect(s,x,y,w,.45,C.wash);txt(s,`${f.record.id} · ${SEVERITY[f.record.severity]}`,x+.16,y+.1,w-.3,.23,14,{bold:true});
-   diagram(s,f.case.diagram,x+.15,y+.65,2.25,1.86);const tx=x+2.62,tw=w-2.82;
+   nativeScene(s,f.record,x+.15,y+.65,2.25,1.86);const tx=x+2.62,tw=w-2.82;
    txt(s,`${f.record.company} · ${f.record.month}`,tx,y+.63,tw,.3,10,{color:C.muted});txt(s,'사고 상황',tx,y+.98,tw,.27,13,{bold:true,color:C.blue});txt(s,f.case.summary,tx,y+1.31,tw,.9,14);txt(s,'확인할 점',tx,y+2.25,tw,.24,12,{bold:true,color:C.blue});txt(s,f.case.caution,tx,y+2.53,tw,h-2.65,10.5,{color:C.muted});
  }
  function mainPage(tab,index) {
-   const s=base(names[tab],tab==='domestic'?'국내 공식 발표 · 미국 분석과 별도':'실제 보고자료의 집계와 사고 경위 분석',index,tab==='domestic'?'집계 기준 2025.9':`N=${fmt(tab==='status'?ads.length:tab==='vru'?a.vru.length:tab==='cases'?rows.filter(r=>['serious','fatal'].includes(r.severity)).length:rows.length)}`);
+   const s=base(names[tab],tab==='domestic'?'국내 공식 발표 · 미국 분석과 별도':'실제 보고자료의 집계와 사고 경위 분석',index,tab==='domestic'?'집계 기준 2025.9':`N=${fmt(tab==='contribution'?contributionSummary(rows).priority.length:tab==='status'?ads.length:tab==='vru'?a.vru.length:tab==='cases'?rows.filter(r=>['serious','fatal'].includes(r.severity)).length:rows.length)}`);
    if(tab!=='domestic'&&(tab==='status'?!ads.length:!rows.length)){empty(s);notes(s,[]);return;}
    if(tab==='overview'){
      section(s,'01','충돌대상별 사고 구성',.55,1.47,10.5);bar(s,byId.get('counterparts'),.55,1.97,10.55,2.75,13);
@@ -71,56 +85,43 @@ export function buildPptx(PptxGenJS,model,filter={},options={}) {
      bar(s,{items:lead,denominator:a.cars.length},.5,5.47,5.1,2.12,10);txt(s,`분모: 자동차 상대 ${fmt(a.cars.length)}건\n세부 8유형은 개별 그림과 CSV에서 확인`,.6,7.75,4.9,.43,10,{color:C.muted});
      section(s,'03','발생환경',5.85,4.95,5.2);
      const place=[{label:'교차로',count:rows.filter(r=>r.roadway==='Intersection').length},{label:'그 외·불명',count:rows.filter(r=>r.roadway!=='Intersection').length}];
-     const env=[['장소',place,rows.length],['주·야간',byId.get('day-night').items,rows.length],['조명',byId.get('lighting').items,byId.get('lighting').denominator],['노면',byId.get('road-surface').items,byId.get('road-surface').denominator]];
+     const env=[['장소',place,rows.length],['주·야간',byId.get('day-night').items,rows.length],['기상',byId.get('weather-overview').items,rows.length],['도로조건',byId.get('road-overview').items,rows.length]];
      env.forEach(([label,items,total],i)=>{const y=5.51+i*.63;txt(s,`${label} · 기재 ${fmt(total)}건`,5.9,y,5,.2,10.5,{bold:true});stack(s,items,total,5.9,y+.22,5.1,.23);txt(s,items.filter(x=>x.count).map(d=>`${d.label} ${fmt(d.count)}`).join(' / '),5.9,y+.45,5.1,.17,8.5,{color:C.muted});});
-     insights(s,'사고특성 분석',[
-       ['자동차 상대 중심',`${fmt(a.cars.length)}건 (${pct(a.cars.length,rows.length)}%). 상대 차량 종류와 사고 직전 움직임을 함께 확인합니다.`],
-       ['접촉부위와 형태 구분','접촉부위만으로 추돌·긁힘·과실을 단정하지 않습니다. 경위 분류와 부위별 그림을 별도로 제공합니다.'],
-       ['결측치를 보존','주야간은 시각으로 구분합니다. 조명·노면은 값이 있는 사고만 분모로 사용합니다.']
-     ],'분포와 구성비를 제시합니다. 운행거리 정보가 없어 회사별 사고율을 비교하지 않습니다.');
+     {const i=insightSummary(model,filter,'overview');insights(s,i.title,i.items,i.note);}
      notes(s,figures.filter(f=>f.tab===tab));
    }else if(tab==='cases'){
-     const priority=['30412-6144','30270-15547','30412-2588','30270-11713'];const available=figures.filter(f=>f.tab==='cases');const selected=[...priority.map(id=>byId.get('case-'+id)).filter(Boolean),...available.filter(f=>!priority.includes(f.record.id))].slice(0,4);
+     const priority=['30412-6144','30270-15547','30412-2588','30270-11713'];const available=figures.filter(f=>f.tab==='cases'&&f.kind==='case');const selected=[...priority.map(id=>byId.get('case-'+id)).filter(Boolean),...available.filter(f=>!priority.includes(f.record.id))].slice(0,4);
      selected.forEach((f,i)=>casePanel(s,f,.55+(i%2)*7.7,1.55+Math.floor(i/2)*3.4,7.2,3.2));
      if(!selected.length)empty(s);notes(s,selected,'그림은 원문에 기초한 개략도. 모든 사고의 자동 진로 복원 기능이 아님.');
    }else if(tab==='status'){
      section(s,'01','사고 당시 작동상태',.55,1.47,10.5);bar(s,byId.get('operating-state'),.55,1.98,10.5,2.08,14);
      section(s,'02','운전자·운영자 유형',.55,4.42,5.0);bar(s,byId.get('operator'),.5,4.95,5.1,2.2,10.5);
-     const timing=transitionSummary(ads);rect(s,.6,7.36,4.9,.77,'EAF5F2');txt(s,`시차 확인 ${timing.known.length}건 중 보고값 5초 이내 ${timing.counts[0].count}건`,.72,7.47,4.65,.25,12,{bold:true,color:C.teal});txt(s,'약 표현 포함. 전체 수동·원격 보고와 분모 구분.',.72,7.85,4.65,.18,9.5,{color:C.muted});
+     const timing=transitionSummary(ads);rect(s,.6,7.36,4.9,.77,'EAF5F2');txt(s,`차내 전환 시차 ${timing.known.length}건 중 5초 이내 ${timing.counts[0].count}건`,.72,7.47,4.65,.25,12,{bold:true,color:C.teal});txt(s,'약 표현·하한 포함. 차내 수동전환 확인이 분모.',.72,7.85,4.65,.18,9.5,{color:C.muted});
      section(s,'03','운행상태별 피해수준',5.9,4.42,5.15);const g=byId.get('state-severity');g.groups.forEach((r,i)=>{const y=5.04+i*.86;txt(s,`${r.label} · ${fmt(r.total)}건`,5.95,y,5,.23,12,{bold:true});stack(s,r.items,r.total,5.95,y+.3,5,.28);const high=r.items.filter(x=>['serious','fatal'].includes(x.key)).reduce((n,x)=>n+x.count,0);txt(s,`중상·사망 ${high}건 (${pct(high,r.total)}%)`,5.95,y+.62,5,.2,10,{color:C.muted});});txt(s,'부상 보고 없음 / 경상 / 중등도 / 중상 / 사망 / 불명',5.95,7.82,5,.25,9,{color:C.muted});
-     insights(s,'운행상태 분석',[
-       ['분모를 구분',`운행상태 비교 ${fmt(ads.length)}건. 사고 당시 ADS 확인 ${fmt(rows.length)}건으로 유형·환경을 분석합니다.`],
-       ['전환 시차의 근거','명시된 초 단위 표현과 사건 시각을 확인했습니다. ‘몇 초 전’이 불명확하면 구분 미확인으로 남깁니다.'],
-       ['상태와 탑승형태 구분','운전자·운영자 없음은 승객 없음과 다릅니다. 차내·원격 운영 유형을 원자료대로 유지합니다.']
-     ],'상태별 피해수준은 보고된 분포입니다. 운행거리·조건이 다른 집단의 위험도를 비교하지 않습니다.');notes(s,figures.filter(f=>f.tab===tab));
+     {const i=insightSummary(model,filter,'status');insights(s,i.title,i.items,i.note);}notes(s,figures.filter(f=>f.tab===tab));
    }else if(tab==='vru'){
      if(!a.vru.length){empty(s);notes(s,[]);return;}
      section(s,'01','취약도로이용자 유형별 구성',.55,1.47,10.5);bar(s,byId.get('vru-types'),.55,1.97,10.5,1.92,14);
      const high=a.vru.filter(r=>['serious','fatal'].includes(r.severity)).length;rect(s,.6,4.03,10.4,.37,'FFF4E4');txt(s,`중상·사망 ${high}건 (${pct(high,a.vru.length)}%) · 피해 인원이 아닌 차량별 사고보고`,.74,4.11,10.0,.22,12,{color:'996328'});
      section(s,'02','ADS 행동·발생환경',.55,4.62,5.1);table(s,byId.get('vru-movement'),.55,5.16,5.1,1.38,9.3);table(s,byId.get('vru-environment'),.55,6.85,5.1,1.12,10.5);txt(s,'주간 06:00–17:59 / 야간 18:00–05:59',.6,8.08,5,.2,9.5,{color:C.muted});
      section(s,'03','접촉부위·피해수준',5.95,4.62,5.1);bar(s,byId.get('vru-contact'),5.9,5.13,5.2,1.88,10.5);txt(s,'복수 접촉부위 가능. 합계가 사고 건수보다 클 수 있음.',5.98,7.09,5,.22,9.5,{color:C.muted});stack(s,byId.get('vru-severity').items,a.vru.length,5.98,7.51,5,.32);txt(s,byId.get('vru-severity').items.filter(x=>x.count).map(x=>`${x.label} ${x.count}`).join(' / '),5.98,7.94,5,.27,9,{color:C.muted});
-     insights(s,'취약도로이용자 분석',[
-       ['유형을 원자료대로',`${a.vru.length}건. 이륜차와 스쿠터·스케이트보드를 구분하며 기타 비자동차 이용자는 별도입니다.`],
-       ['시간과 장소를 확인',`야간 ${a.vru.filter(r=>r.time==='night').length}건 중 교차로 ${a.vru.filter(r=>r.time==='night'&&r.roadway==='Intersection').length}건. 실제 조도와 구분합니다.`],
-       ['피해수준 정의 유지','Moderate를 중상으로 올리지 않습니다. 후속 충격이 있는 경우 원문에서 접촉 순서를 확인합니다.']
-     ],'원문에 기재된 행동·부위·피해수준을 연결합니다. 과실이나 예방 가능한 사고 건수로 해석하지 않습니다.');notes(s,figures.filter(f=>f.tab===tab));
+     {const i=insightSummary(model,filter,'vru');insights(s,i.title,i.items,i.note);}notes(s,figures.filter(f=>f.tab===tab));
+   }else if(tab==='contribution'){
+     const cs=contributionSummary(rows),ii=contributionInsights(rows);section(s,'01','우선검토 사례의 문제 유형',.55,1.47,10.5);bar(s,byId.get('contribution-types'),.55,2,10.5,2.45,13);section(s,'02','최고 피해수준',.55,4.85,5.1);bar(s,byId.get('contribution-severity'),.55,5.4,5.1,2.6,11);section(s,'03','검토 범위',6,4.85,5.1);txt(s,`${cs.priority.length}건 우선검토`,6.2,5.55,4.6,.7,34,{bold:true,color:C.teal});txt(s,`확장 후보 ${cs.broad.length}건\n원문에 문제가 명시된 사례와\n기동·접촉 경위 후보를 구분`,6.2,6.55,4.6,1.2,18);insights(s,ii.title,ii.items,ii.note);notes(s,figures.filter(f=>f.tab===tab));
    }else {
      section(s,'01','사고 신고 추이',.55,1.47,10.5);bar(s,byId.get('domestic-years'),.55,1.99,8.2,2.5,16);txt(s,'누적',9.05,2.45,1.75,.35,16,{color:C.muted,align:'center'});txt(s,'112건',8.87,2.95,2.1,.75,42,{bold:true,align:'center'});txt(s,'2022 ~ 2025.9',8.9,3.85,2.1,.3,12,{color:C.muted,align:'center'});txt(s,'2025년은 1–9월 집계. 전년도 연간 건수와 직접 비교 시 기간 차이에 유의.',.65,4.55,10.1,.35,12,{color:C.muted});
      section(s,'02','자율주행모드 사고',.55,5.02,5.0);section(s,'03','사고 발생 속도',5.93,5.02,5.12);txt(s,'약 35%',.75,5.88,4.55,.7,44,{bold:true,color:C.teal,align:'center'});txt(s,'전체 신고 사고 중\n자율주행모드 운행 중 사고 비중',.85,6.8,4.4,.65,17,{align:'center'});txt(s,'30 km/h 이하',6.05,5.88,4.75,.75,32,{bold:true,color:C.teal,align:'center'});txt(s,'사고가 주로 발생한\n저속 구간에 대한 공식 발표 요약',6.12,6.8,4.65,.65,17,{align:'center'});
-     insights(s,'국내 사고특성',[
-       ['별도 공식 통계','2022년 7건, 2023년 27건, 2024년 31건, 2025년 1–9월 47건입니다.'],
-       ['미국 SGO와 분리','미국의 기간·회사 필터를 바꾸어도 국내 공식 발표값은 변경되지 않습니다.'],
-       ['발표 시점 표시','2025년 11월 28일 발표 자료입니다. 새로운 공식 발표가 있을 때 출처와 함께 갱신합니다.']
-     ],'약 35%를 정확한 건수로 환산하거나 속도 구간별 미공개 건수를 채워 넣지 않습니다.');notes(s,figures.filter(f=>f.tab===tab),model.pkg.domestic.sourceUrl);
+     {const i=insightSummary(model,filter,'domestic');insights(s,i.title,i.items,i.note);}notes(s,figures.filter(f=>f.tab===tab),model.pkg.domestic.sourceUrl);
    }
  }
  function figurePage(f,index) {
    const s=base(f.title,f.tab==='domestic'?'국내 공식 발표자료':'선택한 분석대상에서 계산한 개별 그림',index,f.denominator!=null?`분모 ${fmt(f.denominator)}건`:'',f.tab==='domestic');
-   if(f.kind==='bar')bar(s,f,.65,1.65,14.7,5.92,20);
-   else if(f.kind==='table')table(s,f,.65,1.95,14.7,Math.min(4.9,Math.max(2.4,(f.rows.length+1)*.55)),19);
-   else if(f.kind==='grouped'){f.groups.forEach((g,i)=>{const y=1.9+i*1.55;txt(s,`${g.label} · ${fmt(g.total)}건`,.8,y,14,.45,22,{bold:true});stack(s,g.items,g.total,.8,y+.6,14.2,.5);txt(s,g.items.filter(x=>x.count).map(x=>`${x.label} ${x.count}건 (${pct(x.count,g.total)}%)`).join(' / '),.85,y+1.16,14.1,.3,12,{color:C.muted});});}
+   rect(s,.65,1.48,14.7,.61,'EAF5F2');txt(s,f.insight||'',.8,1.58,14.35,.43,12.5,{color:C.teal});
+   if(f.kind==='bar')bar(s,f,.65,2.24,14.7,5.37,f.items.length>9?14:19);
+   else if(f.kind==='table')table(s,f,.65,2.3,14.7,Math.min(4.9,Math.max(2.4,(f.rows.length+1)*.55)),f.dense?14:18);
+   else if(f.kind==='grouped'){f.groups.forEach((g,i)=>{const gap=f.groups.length>3?1.28:1.55,y=2.25+i*gap;txt(s,`${g.label} · ${fmt(g.total)}건`,.8,y,14,.45,22,{bold:true});stack(s,g.items,g.total,.8,y+.6,14.2,.5);txt(s,g.items.filter(x=>x.count).map(x=>`${x.label} ${x.count}건 (${pct(x.count,g.total)}%)`).join(' / '),.85,y+1.05,14.1,.3,11,{color:C.muted});});}
    else if(f.kind==='stat'){txt(s,f.value,1,2.1,14,1.5,66,{bold:true,color:C.teal,align:'center'});txt(s,f.description,2,4.1,12,1.3,29,{align:'center'});}
-   else if(f.kind==='case'){diagram(s,f.case.diagram,.8,2.0,6.15,4.8);txt(s,`${f.record.company} · ${f.record.month} · 보고 ${f.record.id}`,7.5,1.95,7.4,.55,18,{bold:true});txt(s,'사고 상황',7.5,2.83,7.2,.4,22,{bold:true,color:C.blue});txt(s,f.case.summary,7.5,3.45,7.2,1.5,22);txt(s,'확인할 점',7.5,5.35,7.2,.4,21,{bold:true,color:C.blue});txt(s,f.case.caution,7.5,5.95,7.2,1.25,18,{color:C.muted});}
+   else if(f.kind==='case'){nativeScene(s,f.record,.8,2.55,6.4,4.5);txt(s,`${f.record.company} · ${f.record.month} · 보고 ${f.record.id}`,7.5,1.95,7.4,.55,18,{bold:true});txt(s,'사고 상황',7.5,2.83,7.2,.4,22,{bold:true,color:C.blue});txt(s,f.case.summary,7.5,3.45,7.2,1.5,22);txt(s,'확인할 점',7.5,5.35,7.2,.4,21,{bold:true,color:C.blue});txt(s,f.case.caution,7.5,5.95,7.2,1.25,18,{color:C.muted});}
    txt(s,f.note||'',.8,7.95,14.4,.4,12,{color:C.muted});notes(s,[f]);
  }
  const scope=options.scope||'pages';
