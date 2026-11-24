@@ -1,0 +1,12 @@
+{
+  "name": "ads-report-studio",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test verify.mjs verify-pptx.mjs"
+  },
+  "devDependencies": {
+    "pptxgenjs": "4.0.1",
+    "jszip": "3.10.1"
+  }
+}
