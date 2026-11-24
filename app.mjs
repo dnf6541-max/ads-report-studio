@@ -11,7 +11,7 @@ let resizeObserver,noticeTimer;
 const notify=(msg)=>{const el=$('#notice');el.textContent=msg;el.classList.add('show');clearTimeout(noticeTimer);noticeTimer=setTimeout(()=>el.classList.remove('show'),5500);};
 const selected=()=>filtered(state.model.impact,state.filter);
 const selectedADS=()=>filtered(state.model.ads,state.filter);
-const selectionLabel=()=>`${state.filter.from||'시작'} ~ ${state.filter.to||'종료'} · ${state.filter.company||'전체 보고 회사'}`;
+const selectionLabel=()=>`${state.filter.from||state.filter.to?`${state.filter.from||'자료 시작'} ~ ${state.filter.to||'자료 종료'}`:'전체 기간'} · ${state.filter.company||'전체 보고 회사'}`;
 const periodLabel=rows=>{const m=rows.map(r=>r.month).filter(Boolean).sort();return m.length?`${m[0]} ~ ${m.at(-1)}`:'해당 기간 자료 없음';};
 const exportName=(kind)=>`ADS_${kind}_${state.filter.company?state.filter.company.replace(/[^a-zA-Z0-9가-힣]/g,'_')+'_':''}${new Date().toISOString().slice(0,10)}`;
 const link=(url,label)=>`<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">${esc(label)}</a>`;
@@ -69,7 +69,7 @@ function overviewReport(rows){
   const a=aggregate(rows),car=a.cars.length,n=rows.length;
   const rear=a.scenarios.filter(x=>['01','02'].includes(x.key)).reduce((n,x)=>n+x.count,0);
   const mainTypes=[{label:'정지·직진·감속 후미추돌',count:rear},...['03','04','05'].map(k=>({...a.scenarios.find(x=>x.key===k),label:SCENARIOS[k]}))];
-  mainTypes.push({label:'그 외 자동차 사고',count:car-mainTypes.reduce((n,x)=>n+x.count,0),color:'#a7b7c0'});
+  mainTypes.push({label:'나머지 자동차 사고 유형',count:car-mainTypes.reduce((n,x)=>n+x.count,0),color:'#a7b7c0'});
   const intersection=rows.filter(r=>r.roadway==='Intersection').length;
   const time=a.time.map(x=>({...x,label:({day:'주간',night:'야간',unknown:'시간 불명'})[x.key],color:({day:'#148b82',night:'#267db0',unknown:'#b4bfc8'})[x.key]}));
   const lightN=a.lighting.reduce((n,x)=>n+x.count,0);
