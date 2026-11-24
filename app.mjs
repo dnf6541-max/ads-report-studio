@@ -1,6 +1,6 @@
 import {STATUS,SEVERITY,SCENARIOS,CAR,VRU,COUNTERPART,MOVEMENT,DRIVER,LIGHTING,value,pct,parseCSV,selectFields,sha256,buildModel,filtered,countBy,aggregate,contactCounts,movementGroup,sample,audit,csvExport} from './analysis.mjs';
 import {surfaceSummary,transitionSummary,timingEvidence,figureCatalog,figureDataRows,extraAudit} from './supplement.mjs';
-import {buildPptx} from './export-pptx.mjs';
+import {buildPptx} from './export-pptx.mjs?v=20261124.2';
 
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
