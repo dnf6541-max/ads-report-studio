@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import zlib from 'node:zlib';
 import {buildModel,audit,aggregate,dayNight,parseCSV,parseMonth,severity,filtered,sample,pct,contactCounts,selectFields,sha256,canonical,VRU} from './analysis.mjs';
+import {surfaceSummary,contactPattern,transitionSummary,timingEvidence,TIMING_REVIEW,figureCatalog,figureDataRows,extraAudit} from './supplement.mjs';
 const encoded=(await import('./data-base64.mjs')).default;
 const pkg=JSON.parse(zlib.gunzipSync(Buffer.from(encoded,'base64')));
 const model=await buildModel(pkg);
@@ -87,4 +88,40 @@ test('all 14 serious/fatal case quotations occur in the version actually reviewe
 });
 test('domestic official snapshot sum and published approximations',()=>{
   assert.equal(pkg.domestic.annual.reduce((n,x)=>n+x.count,0),112);assert.equal(pkg.domestic.adsShareApprox,35);assert.equal(pkg.domestic.lowSpeedKph,30);
+});
+test('surface uses only its actual schema and never assumes missing means dry',()=>{
+  const s=surfaceSummary(model.impact);assert.equal(s.available.length,1296);assert.equal(s.missing,1456);assert.equal(s.wetFlagOnly,35);
+  assert.deepEqual(s.counts.map(x=>x.count),[1224,71,1,0]);
+  const absent=surfaceSummary([{raw:{'Roadway-Wet Surface Condition':'Y'}},{raw:{'Roadway-No Unusual Conditions':'Y'}},{raw:{'Roadway Surface':'Unknown'}}]);
+  assert.equal(absent.available.length,0);assert.equal(absent.missing,3);assert.equal(absent.wetFlagOnly,1);
+});
+test('contact pattern partitions records and preserves multiple/unknown flags',()=>{
+  const row=(...flags)=>({raw:Object.fromEntries(flags.map(x=>['SV Contact Area - '+x,'Y']))});
+  assert.equal(contactPattern(row('Front','Front Left')),'front');assert.equal(contactPattern(row('Left','Right')),'side');
+  assert.equal(contactPattern(row('Rear Right')),'rear');assert.equal(contactPattern(row('Front','Left')),'multiple');
+  assert.equal(contactPattern(row('Top')),'multiple');assert.equal(contactPattern(row()),'unknown');
+  const categories=new Set(['front','side','rear','multiple','unknown']);assert.ok(model.impact.every(r=>categories.has(contactPattern(r))));
+});
+test('19 transition timings carry exact evidence and version; seven reported within five seconds',()=>{
+  const t=transitionSummary(model.ads);assert.equal(TIMING_REVIEW.length,19);assert.equal(new Set(TIMING_REVIEW.map(t=>t.id)).size,19);
+  assert.equal(t.base.length,234);assert.equal(t.known.length,19);assert.deepEqual(t.counts.map(x=>x.count),[7,12,215]);
+  assert.deepEqual(t.known.filter(x=>x.t.bucket==='within5').map(x=>x.r.id).sort(),['30530-16297','30413-13083','30270-10596','988-9101','988-6565','30410-4799','30270-31'].sort());
+  const r=model.ads.find(r=>r.id==='30270-10596');assert.equal(timingEvidence(r).version,'2');
+  assert.equal(timingEvidence({...r,narrativeVersion:'3'}),null);assert.equal(timingEvidence({...r,decision:'include'}),null);
+  assert.equal(timingEvidence({...r,narrative:'The vehicle was stationary for five seconds.'}),null);
+  const timestamp=model.ads.find(r=>r.id==='30413-1130');assert.equal(timingEvidence(timestamp).seconds,7);
+  assert.equal(timingEvidence({...timestamp,narrative:timestamp.narrative.replace('16:17:44','16:18:44')}),null);
+  const lower=t.known.filter(x=>x.t.kind==='lower');assert.equal(lower.length,2);assert.ok(lower.every(x=>x.t.bucket==='over5'));
+});
+test('figure exports use the same filters, denominators and actual data',()=>{
+  const figures=figureCatalog(model);assert.equal(figures.length,33);assert.equal(new Set(figures.map(x=>x.id)).size,33);
+  assert.equal(figures.filter(x=>x.kind==='case').length,14);
+  for(const id of ['counterparts','car-situations','contact-pattern','roadway','day-night','lighting','road-surface','operating-state','operator','transition-time','vru-types','vru-severity']){
+    const f=figures.find(x=>x.id===id);assert.equal(f.items.reduce((n,x)=>n+x.count,0),f.denominator,id);
+    assert.equal(figureDataRows(f).reduce((n,x)=>n+x.건수,0),f.denominator,id);
+  }
+  const y=figureCatalog(model,{from:'2021-01',to:'2021-12'});assert.equal(y.find(x=>x.id==='counterparts').denominator,34);
+  const none=figureCatalog(model,{from:'2028-01'});assert.equal(none.find(x=>x.id==='counterparts').denominator,0);
+  assert.equal(none.filter(x=>x.kind==='case').length,0);assert.deepEqual(none.find(x=>x.id==='domestic-years'),figures.find(x=>x.id==='domestic-years'));
+  assert.ok([...audit(model),...extraAudit(model)].every(x=>x.ok));assert.equal(audit(model).length+extraAudit(model).length,32);
 });
