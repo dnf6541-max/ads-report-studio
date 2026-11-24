@@ -1,4 +1,6 @@
 import {STATUS,SEVERITY,SCENARIOS,CAR,VRU,COUNTERPART,MOVEMENT,DRIVER,LIGHTING,value,pct,parseCSV,selectFields,sha256,buildModel,filtered,countBy,aggregate,contactCounts,movementGroup,sample,audit,csvExport} from './analysis.mjs';
+import {surfaceSummary,transitionSummary,timingEvidence,figureCatalog,figureDataRows,extraAudit} from './supplement.mjs';
+import {buildPptx} from './export-pptx.mjs';
 
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -6,11 +8,12 @@ const num=n=>Number(n).toLocaleString('ko-KR');
 const COLORS=['#148b82','#277eae','#5aaac8','#d58a3b','#83949e','#b3c1c8'];
 const SEVCOL={none:'#148b82',minor:'#358ebc',moderate:'#df9f44',serious:'#cb6a40',fatal:'#ad4357',unknown:'#b4bfc8'};
 const NAV=[['overview','01','사고유형·발생환경'],['cases','02','중상·사망 사례'],['status','03','ADS 운행상태'],['vru','04','취약도로이용자'],['domestic','05','국내 사고현황'],['audit','✓','검산·표본 검토'],['records','↗','사고별 원문'],['data','＋','데이터·분석 기준']];
-const state={tab:'overview',filter:{from:'',to:'',company:''},query:'',scope:'impact',page:1,seed:20261124,full:false,pkg:null,model:null,sources:null,busy:false};
-let resizeObserver,noticeTimer;
+const state={tab:'overview',filter:{from:'',to:'',company:''},query:'',scope:'impact',page:1,seed:20261124,full:false,pkg:null,model:null,sources:null,busy:false,figureId:''};
+let resizeObserver,figureObserver,noticeTimer;
 const notify=(msg)=>{const el=$('#notice');el.textContent=msg;el.classList.add('show');clearTimeout(noticeTimer);noticeTimer=setTimeout(()=>el.classList.remove('show'),5500);};
 const selected=()=>filtered(state.model.impact,state.filter);
 const selectedADS=()=>filtered(state.model.ads,state.filter);
+const checksForSelection=()=>[...audit(state.model,selected()),...extraAudit(state.model,selected(),selectedADS())];
 const selectionLabel=()=>`${state.filter.from||state.filter.to?`${state.filter.from||'자료 시작'} ~ ${state.filter.to||'자료 종료'}`:'전체 기간'} · ${state.filter.company||'전체 보고 회사'}`;
 const periodLabel=rows=>{const m=rows.map(r=>r.month).filter(Boolean).sort();return m.length?`${m[0]} ~ ${m.at(-1)}`:'해당 기간 자료 없음';};
 const exportName=(kind)=>`ADS_${kind}_${state.filter.company?state.filter.company.replace(/[^a-zA-Z0-9가-힣]/g,'_')+'_':''}${new Date().toISOString().slice(0,10)}`;
@@ -30,25 +33,25 @@ async function init(){
 }
 
 function render(){
-  const rows=selected(),ads=selectedADS(),pending=filtered(state.model.pending,state.filter),checks=audit(state.model,rows),failed=checks.filter(c=>!c.ok).length;
+  const rows=selected(),ads=selectedADS(),pending=filtered(state.model.pending,state.filter),checks=checksForSelection(),failed=checks.filter(c=>!c.ok).length;
   const companies=[...new Set([...state.model.ads,...state.model.pending].map(r=>r.company))].filter(Boolean).sort();
   const active=NAV.find(n=>n[0]===state.tab);
   $('#app').innerHTML=`
     <aside class="sidebar"><div class="brand"><div class="brandmark">A</div><div><strong>ADS 리포트</strong><small>REPORT STUDIO</small></div></div><div class="nav-label">ANALYSIS REPORTS</div><nav class="nav" aria-label="분석 페이지">${NAV.slice(0,5).map(navButton).join('')}</nav><div class="nav-label">DATA & VERIFICATION</div><nav class="nav" aria-label="데이터와 검증">${NAV.slice(5).map(navButton).join('')}</nav><div class="sidebar-bottom"><span class="dot"></span>브라우저에서 직접 계산<br>SGO ADS · 독립형 리포트<br>자료 스냅샷 ${esc(state.pkg.sourceSnapshot)}${link(NHTSA,'NHTSA 원자료 안내 ↗')}</div></aside>
-    <main class="workspace" id="workspace"><header class="topbar"><div><div class="eyebrow">EVIDENCE BEFORE INSIGHT</div><h1>ADS 사고분석 리포트 스튜디오</h1><p>사고 집계에서 실제 경위까지, 같은 근거로 확인합니다.</p></div><div class="top-actions"><button data-action="data">CSV 업데이트</button><button data-action="csv">분석대상 CSV</button><button class="primary" data-action="pdf-all">5페이지 PDF</button></div></header>
+    <main class="workspace" id="workspace"><header class="topbar"><div><div class="eyebrow">EVIDENCE BEFORE INSIGHT</div><h1>ADS 사고분석 리포트 스튜디오</h1><p>사고 집계에서 실제 경위까지, 같은 근거로 확인합니다.</p></div><div class="top-actions"><button data-action="data">CSV 업데이트</button><button data-action="csv">분석대상 CSV</button><button data-action="pdf-all">5페이지 PDF</button><button class="primary" data-action="pptx-all">5페이지 PPTX</button></div></header>
     <form class="filter-panel" id="filters"><label>발생월 · 시작<input type="month" name="from" aria-label="발생월 시작" value="${esc(state.filter.from)}"></label><label>발생월 · 종료<input type="month" name="to" aria-label="발생월 종료" value="${esc(state.filter.to)}"></label><label>보고 회사<select name="company" aria-label="보고 회사"><option value="">전체 보고 회사</option>${companies.map(c=>`<option value="${esc(c)}" ${state.filter.company===c?'selected':''}>${esc(c)}</option>`).join('')}</select></label><button type="submit">적용</button><button type="button" class="ghost" data-action="reset-filter">초기화</button><div class="filter-note">미국 분석: 사고·차량 보고 기준<br>국내 공식 통계는 별도 집계</div></form>
     <section class="kpis" aria-label="선택 범위 요약"><article class="kpi"><div class="kpi-label">사고 당시 ADS 운행 확인</div><strong>${num(rows.length)}<small>건</small></strong><p>${esc(periodLabel(rows))}</p></article><article class="kpi"><div class="kpi-label">운행상태 비교 대상</div><strong>${num(ads.length)}<small>건</small></strong><p>ADS 시스템으로 보고된 검수 대상</p></article><article class="kpi"><div class="kpi-label">중상·사망 보고</div><strong>${num(rows.filter(r=>['serious','fatal'].includes(r.severity)).length)}<small>건</small></strong><p>최고 피해수준 · Serious / Fatality</p></article><article class="kpi"><div class="kpi-label">검산 / 재검토 필요</div><strong>${failed?'확인 필요':'통과'}<small>/ ${num(pending.length)}건</small></strong><p>합계·기준 건수·검수 연결 대조</p></article></section>
     ${state.model.pending.length?`<div class="warning-banner">새로 추가되거나 변경된 최신 보고 ${num(state.model.pending.length)}건은 재검토 대상입니다. 현재 분석 수치는 검수 결과와 원문이 일치하는 사고만 포함합니다. <button class="text-button" data-action="pending">재검토 대상 확인 →</button></div>`:''}
-    <div class="panel-heading"><div><h2>${esc(active[2])}</h2><p>${state.tab==='domestic'?'한국교통안전공단 공식 발표 · 2025년 9월까지의 별도 통계':esc(selectionLabel())}</p></div><div class="panel-actions">${['overview','cases','status','vru','domestic'].includes(state.tab)?`<span class="badge">${state.tab==='domestic'?'공식 발표 스냅샷':'실제 데이터 · 검수 연계'}</span><button data-action="zoom">${state.full?'화면에 맞춤':'원본 크기'}</button><button data-action="pdf-one">페이지 PDF</button>`:''}</div></div>
+    <div class="panel-heading"><div><h2>${esc(active[2])}</h2><p>${state.tab==='domestic'?'한국교통안전공단 공식 발표 · 2025년 9월까지의 별도 통계':esc(selectionLabel())}</p></div><div class="panel-actions">${['overview','cases','status','vru','domestic'].includes(state.tab)?`<span class="badge">${state.tab==='domestic'?'공식 발표 스냅샷':'실제 데이터 · 검수 연계'}</span><button data-action="zoom">${state.full?'화면에 맞춤':'원본 크기'}</button><button data-action="png-one">페이지 PNG</button><button data-action="pptx-one">페이지 PPTX</button><button data-action="pdf-one">페이지 PDF</button>`:''}</div></div>
     <div id="content">${renderContent()}</div><footer class="app-footer">Automated Driving System (ADS): 자율주행시스템. 구성비는 보고된 사고의 분포이며 사고율·법적 과실·대책 효과를 뜻하지 않습니다.<br>기존 대시보드와 분리된 독립 앱 · 수치는 선택한 파일·검수표·필터에 따라 다시 계산됩니다.</footer></main>`;
-  bind();fitSlide();
+  bind();fitSlide();fitFigure();
 }
 function navButton([id,n,label]){return `<button data-tab="${id}" class="${state.tab===id?'active':''}" ${state.tab===id?'aria-current="page"':''}><span class="nav-num">${n}</span>${label}</button>`;}
 function renderContent(){
   if(state.tab==='audit')return auditPage();
   if(state.tab==='records')return recordsPage();
   if(state.tab==='data')return dataPage();
-  return `<div class="report-stage ${state.full?'full':''}"><div class="slide-shell">${report(state.tab)}</div></div>${support(state.tab)}`;
+  return `<div class="report-stage ${state.full?'full':''}"><div class="slide-shell">${report(state.tab)}</div></div>${figurePanel(state.tab)}${support(state.tab)}`;
 }
 function slide(title,subtitle,chip,body,page,foot=''){
   return `<article class="slide" aria-label="${esc(title)}"><header class="slide-header"><div><h2>${title}</h2><p class="slide-subtitle">${subtitle}</p></div><span class="slide-chip">${chip}</span></header><div class="slide-body">${body}</div><footer class="slide-footer"><div>${foot||`자료: NHTSA SGO ADS 제공 CSV 2개 · 최신 보고·중복 연결 및 사고 당시 작동상태 검수 기준.<br>범위: ${esc(selectionLabel())} · 차량별 사고보고 기준. 구성비로 사고위험·법적 과실을 판단하지 않음.`}</div><span class="page-no">${page}</span></footer></article>`;
@@ -73,11 +76,12 @@ function overviewReport(rows){
   const intersection=rows.filter(r=>r.roadway==='Intersection').length;
   const time=a.time.map(x=>({...x,label:({day:'주간',night:'야간',unknown:'시간 불명'})[x.key],color:({day:'#148b82',night:'#267db0',unknown:'#b4bfc8'})[x.key]}));
   const lightN=a.lighting.reduce((n,x)=>n+x.count,0);
+  const surface=surfaceSummary(rows);
   const light=a.lighting.map(x=>({...x,label:LIGHTING[x.key],color:({Daylight:'#64b5a3','Dark - Lighted':'#287ea8','Dawn / Dusk':'#d6a655','Dark - Not Lighted':'#29465e'})[x.key]||'#a9bbc3'}));
-  const body=`<div class="report-columns"><div class="report-main">${section('01','충돌대상별 사고 구성',`전체 ${num(n)}건`)}${bars(a.counterparts,n)}<div class="split-bottom"><section>${section('02','자동차 상대 대표 상황')} ${bars(mainTypes,car,{compact:true})}<p class="small-note">분모: 자동차 상대 ${num(car)}건. 두 후미추돌 유형을 합산.<br>세부 8유형·연도별 집계는 아래 상세표에서 확인.</p></section><section>${section('03','발생환경')}<div class="stack-label"><b>장소</b><span>전체 ${num(n)}건</span></div>${stack([{label:'교차로',count:intersection},{label:'그 외 도로·불명',count:n-intersection}],n)}<div class="stack-label"><b>주·야간</b><span>신고 시각 기준</span></div>${stack(time,n)}<div class="stack-label"><b>조명 상태</b><span>기재 ${num(lightN)}건만</span></div>${stack(light,lightN)}<p class="small-note">주간 06:00–17:59 / 야간 18:00–05:59.<br>조명 미기재·불명 ${num(n-lightN)}건은 조명 분모에서 제외.</p></section></div></div>${insights('사고특성 분석',[
+  const body=`<div class="report-columns"><div class="report-main overview-main">${section('01','충돌대상별 사고 구성',`전체 ${num(n)}건`)}${bars(a.counterparts,n)}<div class="split-bottom"><section>${section('02','자동차 상대 대표 상황')} ${bars(mainTypes,car,{compact:true})}<p class="small-note">분모: 자동차 상대 ${num(car)}건. 두 후미추돌 유형을 합산.<br>세부 8유형·연도별 집계는 아래 상세표에서 확인.</p></section><section>${section('03','발생환경')}<div class="stack-label"><b>장소</b><span>전체 ${num(n)}건</span></div>${stack([{label:'교차로',count:intersection},{label:'그 외 도로·불명',count:n-intersection}],n)}<div class="stack-label"><b>주·야간</b><span>신고 시각 기준</span></div>${stack(time,n)}<div class="stack-label"><b>조명 상태</b><span>기재 ${num(lightN)}건만</span></div>${stack(light,lightN)}<div class="stack-label"><b>노면 상태</b><span>기재 ${num(surface.available.length)}건만</span></div>${stack(surface.counts,surface.available.length)}<p class="small-note">주간 06:00–17:59 / 야간 18:00–05:59.</p></section></div></div>${insights('사고특성 분석',[
     ['자동차 상대 중심',`자동차 상대는 ${num(car)}건 (${pct(car,n)}%)입니다. 차량 종류와 사고 직전 움직임을 함께 확인합니다.`],
     ['후미추돌 상황 구분',`정지·직진·감속 중 후미추돌은 자동차 상대 ${num(car)}건 중 ${num(rear)}건 (${pct(rear,car)}%)입니다.`],
-    ['시간과 조명 분리',`주·야간은 신고 시각, 조명 상태는 별도 변수입니다. 조명 기재율은 ${pct(lightN,n)}%입니다.`]
+    ['시간·조명·노면 구분',`주·야간은 신고 시각으로 구분합니다. 조명 ${num(lightN)}건, 노면 ${num(surface.available.length)}건은 유효값이 있는 사고만 집계합니다.`]
   ],'사고 형태는 검수된 움직임·접촉 부위와 경위를 연결한 분류입니다. 회사별 운행거리 정보가 없어 사고율을 비교하지 않습니다.')}</div>`;
   return slide('ADS 사고유형 및 충돌특성','충돌대상 · 사고 상황 · 발생환경을 같은 분석대상에서 확인',`사고 당시 ADS 확인 · N=${num(n)}`,body,'01');
 }
@@ -99,9 +103,9 @@ function statusReport(){
   const labels={include:'사고 당시 ADS 운행 확인',non_ads:'사고 시점 수동·원격 등',insufficient:'사고 당시 상태 확인 부족',conflict:'작동상태 자료 불일치'};
   const statusItems=statuses.map(x=>({...x,label:labels[x.key],color:({include:'#148b82',non_ads:'#d38b3d',insufficient:'#428eb6',conflict:'#a7b6c0'})[x.key]}));
   const driver=countBy(rows,'driver').sort((a,b)=>b.count-a.count).map(x=>({...x,label:DRIVER[x.key]||x.key}));
-  const confirmed=rows.filter(r=>r.decision==='include'),other=rows.filter(r=>r.decision==='non_ads');
+  const confirmed=rows.filter(r=>r.decision==='include'),other=rows.filter(r=>r.decision==='non_ads'),timing=transitionSummary(rows);
   const compare=[['ADS 운행 확인',confirmed],['수동·원격 운행 등',other],['상태 불충분·불일치',rows.filter(r=>['insufficient','conflict'].includes(r.decision))]];
-  const body=`<div class="report-columns"><div class="report-main status-main">${section('01','사고 당시 작동상태',`ADS 시스템 보고 ${num(n)}건`)}${bars(statusItems,n)}<div class="notice-strip">작동 시스템 변수 + 운행상태 변수 + 사고 경위의 선후관계를 함께 검수</div><div class="split-bottom"><section>${section('02','운전자·운영자 유형')}${bars(driver,n,{compact:true})}<p class="small-note">Driver / Operator Type의 원값을 집계.<br>‘None’은 운전자·운영자 없음이며 승객 없음이 아님.</p><div class="notice-strip amber">전환 시점(예: 충돌 5초 전)은<br>명시된 경위·로그가 있어야 확인 가능</div></section><section>${section('03','상태별 피해수준')}<div class="severity-compare">${compare.map(([label,rs])=>`<div class="severity-row"><div class="stack-label"><b>${label}</b><span>${num(rs.length)}건</span></div>${stack(countBy(rs,'severity',Object.keys(SEVERITY)).map(x=>({...x,label:SEVERITY[x.key],color:SEVCOL[x.key]})),rs.length,{legend:false})}<p class="small-note">중상·사망 ${rs.filter(r=>['serious','fatal'].includes(r.severity)).length}건 / ${num(rs.length)}건 (${pct(rs.filter(r=>['serious','fatal'].includes(r.severity)).length,rs.length)}%)</p></div>`).join('')}</div><div class="legend">${Object.keys(SEVERITY).map(k=>`<span><i style="background:${SEVCOL[k]}"></i>${esc(SEVERITY[k])}</span>`).join('')}</div><p class="small-note">각 상태 안에서의 피해수준 구성비.<br>운행거리·노출량을 보정한 위험도 비교가 아님.</p></section></div></div>${insights('운행상태 분석',[
+  const body=`<div class="report-columns"><div class="report-main status-main">${section('01','사고 당시 작동상태',`ADS 시스템 보고 ${num(n)}건`)}${bars(statusItems,n)}<div class="notice-strip">작동 시스템 변수 + 운행상태 변수 + 사고 경위의 선후관계를 함께 검수</div><div class="split-bottom"><section>${section('02','운전자·운영자 유형')}${bars(driver,n,{compact:true})}<p class="small-note">Driver / Operator Type의 원값을 집계.<br>‘None’은 운전자·운영자 없음이며 승객 없음이 아님.</p><div class="notice-strip amber">전환 시차 확인 ${timing.known.length}건 중<br>보고값 5초 이내 ${timing.counts[0].count}건 · 약 표현 포함</div></section><section>${section('03','상태별 피해수준')}<div class="severity-compare">${compare.map(([label,rs])=>`<div class="severity-row"><div class="stack-label"><b>${label}</b><span>${num(rs.length)}건</span></div>${stack(countBy(rs,'severity',Object.keys(SEVERITY)).map(x=>({...x,label:SEVERITY[x.key],color:SEVCOL[x.key]})),rs.length,{legend:false})}<p class="small-note">중상·사망 ${rs.filter(r=>['serious','fatal'].includes(r.severity)).length}건 / ${num(rs.length)}건 (${pct(rs.filter(r=>['serious','fatal'].includes(r.severity)).length,rs.length)}%)</p></div>`).join('')}</div><div class="legend">${Object.keys(SEVERITY).map(k=>`<span><i style="background:${SEVCOL[k]}"></i>${esc(SEVERITY[k])}</span>`).join('')}</div><p class="small-note">각 상태 안에서의 피해수준 구성비.<br>운행거리·노출량을 보정한 위험도 비교가 아님.</p></section></div></div>${insights('운행상태 분석',[
     ['분모를 구분',`운행상태 비교에는 ${num(n)}건을 사용합니다. 유형·환경 분석은 그중 사고 당시 ADS 운행이 확인된 ${num(confirmed.length)}건입니다.`],
     ['시스템과 시점 구분',`Automation System Engaged?는 시스템 구분입니다. 해당 값만으로 충돌 순간의 ADS 유지 여부를 확정하지 않습니다.`],
     ['수동·원격 운행 별도',`사고 시점 수동·원격 운행 등 ${num(other.length)}건을 분리합니다. 이 건수 전체가 ‘충돌 직전 5초 내 전환’을 뜻하지 않습니다.`]
@@ -154,6 +158,21 @@ function diagram(type){
   return `<svg viewBox="0 0 300 230" role="img" aria-label="사고 경위의 개략 재구성">${common}${road}${contents}</svg>`;
 }
 
+function currentFigures(){return figureCatalog(state.model,state.filter).filter(f=>f.tab===state.tab);}
+function chosenFigure(){const list=currentFigures();return list.find(f=>f.id===state.figureId)||list[0];}
+function figurePanel(tab){
+ const figs=currentFigures(),f=chosenFigure();if(!f)return '';
+ return `<section class="support-panel export-panel"><h3>PPT에 넣을 그림 저장</h3><p>페이지 PNG는 3200 × 1800, 개별 그림 PNG는 2400 × 1350으로 저장합니다. PPTX의 글자·표·차트·개략도는 편집할 수 있습니다.</p><div class="figure-controls"><label for="figure-select">개별 그림</label><select id="figure-select">${figs.map(x=>`<option value="${esc(x.id)}" ${x.id===f.id?'selected':''}>${esc(x.kind==='case'?`${x.record.id} · ${x.record.company} · ${x.title}`:x.title)}</option>`).join('')}</select><button data-action="figure-png">그림 PNG</button><button data-action="figure-pptx">그림 PPTX</button><button data-action="figure-csv">그림 집계 CSV</button></div><details id="figure-details"><summary>선택한 그림 미리보기</summary><div class="figure-stage"><div class="figure-shell" id="figure-preview">${figureMarkup(f)}</div></div></details><div class="bulk-exports"><button data-action="png-all">5페이지 PNG 묶음</button><button data-action="figures-pptx">전체 그림 PPTX</button><span>현재 필터를 적용합니다. 국내 통계는 별도 공식 발표값입니다.</span></div></section>`;
+}
+function figureMarkup(f){
+ let body='';
+ if(f.kind==='bar')body=f.items.some(x=>x.count)?bars(f.items,f.denominator):'<div class="empty-report"><h3>해당 자료 없음</h3></div>';
+ else if(f.kind==='table')body=`<table class="slide-table"><thead><tr>${f.columns.map(c=>`<th>${esc(c)}</th>`).join('')}</tr></thead><tbody>${f.rows.map(r=>`<tr>${r.map(c=>`<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+ else if(f.kind==='grouped')body=f.groups.map(g=>`<div class="figure-group"><h3>${esc(g.label)} · ${num(g.total)}건</h3>${stack(g.items.map(x=>({...x,color:SEVCOL[x.key]})),g.total)}</div>`).join('');
+ else if(f.kind==='stat')body=`<div class="figure-stat"><strong>${esc(f.value)}</strong><p>${esc(f.description)}</p></div>`;
+ else if(f.kind==='case')body=`<div class="case-content"><div class="case-diagram">${diagram(f.case.diagram)}<div class="diagram-legend">청록: ADS 차량 · 회색: 상대 차량 · 주황: 접촉</div></div><div class="case-copy"><div class="case-meta">${esc(f.record.company)} · ${esc(f.record.month)} · ${esc(f.record.id)}</div><h4>사고 상황</h4><p>${esc(f.case.summary)}</p><h4>확인할 점</h4><p>${esc(f.case.caution)}</p></div></div>`;
+ return `<article class="figure-sheet"><header><h2>${esc(f.title)}</h2><p>${f.denominator!=null?`분모 ${num(f.denominator)}건 · `:''}${f.tab==='domestic'?'국내 공식 발표자료':esc(selectionLabel())}</p></header><div class="figure-body">${body}</div><footer>${esc(f.note||'차량별 사고보고 기준. 보고 구성비는 사고율·과실을 뜻하지 않습니다.')}<br>자료: ${f.tab==='domestic'?'한국교통안전공단 · 2025.11.28 발표':'NHTSA SGO ADS 제공 CSV 및 검수 기록'}</footer></article>`;
+}
 function support(tab){
   if(tab==='domestic')return `<section class="support-panel"><h3>독립된 국내 공식 통계</h3><p>${esc(state.pkg.domestic.note)} ${link(state.pkg.domestic.sourceUrl,'공식 보도자료 확인 ↗')}</p></section>`;
   if(tab==='cases'){const rows=selected().filter(r=>['serious','fatal'].includes(r.severity));return `<section class="support-panel"><h3>선택 범위의 중상·사망 보고 ${num(rows.length)}건</h3><p>최고 피해수준의 원문 값을 유지했습니다. 같은 사고의 피해 인원을 뜻하지 않습니다.</p>${recordTable(rows)}</section>`;}
@@ -162,13 +181,14 @@ function support(tab){
     return `<section class="support-panel"><details open><summary>자동차 상대 8가지 상황 · 연도별 상세 집계</summary><p class="data-help">각 셀: 건수 (해당 연도 자동차 상대 사고 대비 %). 두 후미추돌은 표에서 구분하며 상단 그래프에서는 합산합니다. 유형은 과실이 아닌 보고된 움직임의 분류입니다.</p><div class="table-scroll"><table><thead><tr><th>대표 상황</th>${years.map(y=>`<th>${y}</th>`).join('')}<th>전체</th></tr></thead><tbody>${a.scenarios.map(s=>`<tr><td>${esc(s.label)}</td>${years.map(y=>{const cr=a.cars.filter(r=>r.month.startsWith(y));const c=cr.filter(r=>r.scenario===s.key).length;return `<td>${num(c)} (${pct(c,cr.length)}%)</td>`;}).join('')}<td class="active-cell">${num(s.count)} (${pct(s.count,a.cars.length)}%)</td></tr>`).join('')}<tr><th>자동차 상대 합계</th>${years.map(y=>`<th>${num(a.cars.filter(r=>r.month.startsWith(y)).length)}</th>`).join('')}<th>${num(a.cars.length)}</th></tr></tbody></table></div></details></section>`;
   }
   if(tab==='vru')return `<section class="support-panel"><h3>분류 기준과 분모</h3><div class="definition-grid"><article><h4>이륜차와 스쿠터 구분</h4><p>Motorcycle과 Non-Motorist: Scooter - Skateboard를 원자료대로 나눕니다. Scooter라는 말만으로 이륜차로 통합하지 않습니다.</p></article><article><h4>접촉부위는 중복 가능</h4><p>앞·뒤 모서리를 전면·후면에 포함하고 좌·우를 측면으로 묶습니다. 한 사고에 여러 부위가 체크될 수 있습니다.</p></article><article><h4>행동 분류의 범위</h4><p>SV Pre-Crash Movement를 사용합니다. 정지·주차에는 Stopped와 Parked, 변경·합류에는 Changing Lanes와 Merging을 포함합니다.</p></article></div></section>`;
-  return `<section class="support-panel"><h3>사고 당시 ADS 여부를 확인하는 방법</h3><p><code>Automation System Engaged?</code>와 <code>Engagement Status</code>는 양식별 의미가 다릅니다. 사고 경위의 충돌 전·후 수동/원격 운행 전환을 확인한 검수 기록을 연결합니다. <code>Verified Engaged</code> 하나만으로 충돌 순간 ADS 운행을 확정하지 않습니다. 경위에 전환 시점이 없으면 시간을 추정하지 않습니다.</p></section>`;
+  const timing=transitionSummary(selectedADS());
+  return `<section class="support-panel"><h3>사고 당시 ADS 여부를 확인하는 방법</h3><p><code>Automation System Engaged?</code>와 <code>Engagement Status</code>는 양식별 의미가 다릅니다. 사고 경위의 충돌 전·후 수동/원격 운행 전환을 확인한 검수 기록을 연결합니다. <code>Verified Engaged</code> 하나만으로 충돌 순간 ADS 운행을 확정하지 않습니다.</p></section><section class="support-panel"><h3>제어권 전환 시차의 원문 근거</h3><p>수동·원격 운행 등 ${num(timing.base.length)}건 중 시차 구분 확인 ${timing.known.length}건. 보고값 5초 이내 ${timing.counts[0].count}건, 5초 초과 ${timing.counts[1].count}건, 구분 미확인 ${timing.counts[2].count}건입니다. ‘약 5초’는 보고값에 따라 5초 이내로 분류하며, 실제 시각의 오차범위를 추정하지 않습니다. ‘직전’, ‘몇 초’만 쓰인 경우 숫자로 채우지 않습니다.</p><div class="table-scroll"><table><thead><tr><th>보고번호</th><th>발생월·회사</th><th>보고 시차</th><th>원문 근거</th></tr></thead><tbody>${timing.details.map(({r,t})=>`<tr><td><button class="text-button" data-record="${esc(r.id)}">${esc(r.id)}</button><br>경위 v${esc(r.narrativeVersion)}</td><td>${esc(r.month)}<br>${esc(r.company)}</td><td>${esc(t.label)}${t.kind==='lower'?'<br>동작 이후 접촉, 정확한 시차 미상':''}</td><td class="wrap">${esc(t.evidence)}${t.secondEvidence?'<br>'+esc(t.secondEvidence):''}</td></tr>`).join('')||'<tr><td colspan="4">선택 범위에서 시차를 구분한 근거가 없습니다.</td></tr>'}</tbody></table></div><div class="panel-actions"><button data-action="timing-csv">전환 시차 근거 CSV</button></div><p class="data-help">전환 계기는 원문이 명시한 경우만 확인합니다. 예: 상대차의 차로 침범(988-6565), ODD 이탈(30610-1091). 이 사례를 전체 전환의 원인 비중으로 일반화하지 않습니다.</p></section>`;
 }
 
 function recordTable(rows){return `<div class="table-scroll"><table><thead><tr><th>보고번호</th><th>발생월·회사</th><th>사고 상대</th><th>최고 피해수준</th><th>운행상태 검수</th></tr></thead><tbody>${rows.map(r=>`<tr><td><button class="text-button" data-record="${esc(r.id)}">${esc(r.id)}</button><br><span class="muted">v${esc(r.version)} / 경위 v${esc(r.narrativeVersion)}</span></td><td>${esc(r.month||'발생월 불명')}<br>${esc(r.company)}</td><td>${esc(COUNTERPART[r.counterpart]||r.counterpart)}</td><td>${esc(SEVERITY[r.severity])}</td><td>${esc(STATUS[r.decision]||r.decision)}</td></tr>`).join('')||'<tr><td colspan="5">해당 사고가 없습니다.</td></tr>'}</tbody></table></div>`;}
 
 function auditPage(){
-  const checks=audit(state.model,selected()),passed=checks.filter(c=>c.ok).length;
+  const checks=checksForSelection(),passed=checks.filter(c=>c.ok).length;
   return `<section class="support-panel" style="margin-top:0"><h3>집계 검산</h3><p>현재 파일 전체의 검수 연결과 선택 필터의 분류 합계를 함께 검사합니다. 기준 데이터가 일치할 때는 사전 검산 건수도 대조합니다.</p><div class="audit-summary ${passed===checks.length?'':'bad'}">${passed===checks.length?'✓':'!'} ${passed} / ${checks.length} 검사 통과 ${state.model.baseline?'· 제공 원본의 기준 집계와 일치':'· 업데이트 파일은 불변 조건만 검사, 기준 건수 고정 검사 미적용'}</div><div class="table-scroll"><table><thead><tr><th>검사 항목</th><th>계산값</th><th>대조값</th><th>결과</th></tr></thead><tbody>${checks.map(c=>`<tr><td>${esc(c.name)}</td><td>${num(c.actual)}</td><td>${num(c.expected)}</td><td class="${c.ok?'check-pass':'check-fail'}">${c.ok?'통과':'불일치'}</td></tr>`).join('')}</tbody></table></div><div class="panel-actions" style="margin-top:15px"><button data-action="audit-json">검산 결과 JSON</button><button data-action="sample-csv">표본 검토 CSV</button></div></section><section class="support-panel"><h3>재현 가능한 무작위 표본</h3><p>선택한 분석대상에서 최대 8건을 추출합니다. 같은 시드와 필터는 같은 표본을 만듭니다. 아래 비교는 실제 변수·기존 검수 결과를 보여주며, 독립적인 사람의 재검토를 대신하지 않습니다.</p><div class="sample-tools"><label for="sample-seed">추출 시드</label><input id="sample-seed" type="number" value="${state.seed}"><button data-action="resample">다시 추출</button></div><div class="sample-grid">${sample(selected(),8,state.seed).map(sampleCard).join('')||'<p>추출할 사고가 없습니다.</p>'}</div></section>`;
 }
 function sampleCard(r){
@@ -199,13 +219,15 @@ function showRecord(id){
 }
 
 function bind(){
-  $('#filters').onsubmit=e=>{e.preventDefault();const f=Object.fromEntries(new FormData(e.currentTarget));if(f.from&&f.to&&f.from>f.to)return notify('시작월이 종료월보다 늦습니다.');state.filter=f;state.page=1;render();};
+  $('#filters').onsubmit=e=>{e.preventDefault();if(state.busy)return;const f=Object.fromEntries(new FormData(e.currentTarget));if(f.from&&f.to&&f.from>f.to)return notify('시작월이 종료월보다 늦습니다.');state.filter=f;state.page=1;render();};
   if($('#record-search'))$('#record-search').oninput=e=>{state.query=e.target.value;state.page=1;$('#records-result').innerHTML=recordsResult();};
   if($('#record-scope'))$('#record-scope').onchange=e=>{state.scope=e.target.value;state.page=1;$('#records-result').innerHTML=recordsResult();};
   if($('#csv-upload'))$('#csv-upload').onchange=e=>importCSV([...e.target.files]);
+  if($('#figure-select'))$('#figure-select').onchange=e=>{state.figureId=e.target.value;$('#figure-preview').innerHTML=figureMarkup(chosenFigure());fitFigure();};
 }
 document.addEventListener('click',async e=>{
   const target=e.target.closest('button');if(!target)return;
+  if(state.busy)return;
   if(target.dataset.tab){state.tab=target.dataset.tab;state.page=1;state.full=false;render();return;}
   if(target.dataset.record){showRecord(target.dataset.record);return;}
   const action=target.dataset.action;if(!action)return;
@@ -213,12 +235,19 @@ document.addEventListener('click',async e=>{
   else if(action==='reset-filter'){state.filter={from:'',to:'',company:''};state.page=1;render();}
   else if(action==='zoom'){state.full=!state.full;render();}
   else if(action==='pdf-one'||action==='pdf-all')await exportPDF(action==='pdf-all');
+  else if(action==='png-one'||action==='png-all')await exportPNG(action==='png-all'?'all':'one');
+  else if(action==='figure-png')await exportPNG('figure');
+  else if(action==='pptx-one'||action==='pptx-all')await exportPPTX({scope:'pages',...(action==='pptx-one'?{tab:state.tab}:{})});
+  else if(action==='figure-pptx')await exportPPTX({scope:'figures',figureId:chosenFigure()?.id});
+  else if(action==='figures-pptx')await exportPPTX({scope:'figures'});
+  else if(action==='figure-csv'){const f=chosenFigure();if(f)download(csvExport(figureDataRows(f)),exportName(f.id)+'.csv','text/csv;charset=utf-8');}
+  else if(action==='timing-csv'){const t=transitionSummary(selectedADS());download(csvExport(t.details.map(({r,t})=>({보고번호:r.id,경위버전:r.narrativeVersion,발생월:r.month,보고회사:r.company,보고시차:t.label,구분:t.bucket,원문근거:t.evidence,추가근거:t.secondEvidence}))),exportName('전환시차_원문근거')+'.csv','text/csv;charset=utf-8');}
   else if(action==='csv')downloadCSV(selected(),'분석대상');
   else if(action==='records-csv')downloadCSV(recordRows(),'검색결과');
   else if(action==='prev'||action==='next'){state.page+=action==='prev'?-1:1;$('#records-result').innerHTML=recordsResult();}
   else if(action==='resample'){const n=Number($('#sample-seed').value);if(!Number.isFinite(n))return notify('유효한 정수 시드를 입력하세요.');state.seed=n>>>0;render();}
   else if(action==='sample-csv')downloadCSV(sample(selected(),8,state.seed),'표본검토_seed'+state.seed);
-  else if(action==='audit-json')download(JSON.stringify({created:new Date().toISOString(),filter:state.filter,seed:state.seed,baseline:state.model.baseline,checks:audit(state.model,selected()),sources:state.sources.map(({rows,...s})=>s),sample:sample(selected(),8,state.seed).map(exportRow)},null,2),exportName('검산')+'.json','application/json');
+  else if(action==='audit-json')download(JSON.stringify({created:new Date().toISOString(),filter:state.filter,seed:state.seed,baseline:state.model.baseline,checks:checksForSelection(),sources:state.sources.map(({rows,...s})=>s),sample:sample(selected(),8,state.seed).map(exportRow)},null,2),exportName('검산')+'.json','application/json');
   else if(action==='upload')$('#csv-upload').click();
   else if(action==='restore'){state.sources=state.pkg.sources;state.model=await buildModel(state.pkg);render();notify('제공된 원본 데이터와 검수표로 복원했습니다.');}
   else if(action==='package')await exportPackage();
@@ -230,6 +259,7 @@ function fitSlide(){
   const fit=()=>{const s=state.full?1:Math.min(1,shell.clientWidth/1600);shell.style.height=(900*s)+'px';shell.querySelector('.slide').style.transform=`scale(${s})`;};
   resizeObserver=new ResizeObserver(fit);resizeObserver.observe(shell);fit();
 }
+function fitFigure(){figureObserver?.disconnect();const shell=$('.figure-shell');if(!shell)return;const fit=()=>{const scale=Math.min(1,shell.clientWidth/1200);shell.style.height=675*scale+'px';shell.querySelector('.figure-sheet').style.transform=`scale(${scale})`;};figureObserver=new ResizeObserver(fit);figureObserver.observe(shell);fit();}
 function exportRow(r){return {보고번호:r.id,최신버전:r.version,경위버전:r.narrativeVersion,연결보고:r.members.join(';'),발생월:r.month,보고회사:r.company,시스템:value(r.raw,'Automation System Engaged?'),상태변수:value(r.raw,'Engagement Status'),검수판정:STATUS[r.decision],검수근거:r.reason,사고상대:r.counterpart,차량행동:value(r.raw,'SV Pre-Crash Movement'),상대행동:value(r.raw,'CP Pre-Crash Movement'),자동차유형:SCENARIOS[r.scenario]||'',시각:value(r.raw,'Incident Time (24:00)'),주야간:r.time,조명:value(r.raw,'Lighting'),피해수준원값:value(r.raw,'Highest Injury Severity Alleged'),피해수준:SEVERITY[r.severity],사고경위:r.narrative};}
 function downloadCSV(rows,label){download(csvExport(rows.map(exportRow)),exportName(label)+'.csv','text/csv;charset=utf-8');notify(`${num(rows.length)}건을 CSV로 저장했습니다.`);}
 function download(body,name,type){const url=URL.createObjectURL(new Blob([body],{type}));const a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),10000);}
@@ -253,9 +283,45 @@ async function importCSV(files){
 async function exportPackage(){
   try{const body=JSON.stringify({...state.pkg,sources:state.sources});const stream=new Blob([body]).stream().pipeThrough(new CompressionStream('gzip'));download(await new Response(stream).arrayBuffer(),'data.json.gz','application/gzip');notify('데이터 패키지를 저장했습니다. 검수 후 encode-package.mjs로 변환해 새 앱 저장소에 반영하세요.');}catch(e){notify(e.message);}
 }
+function lockExport(){
+ if(state.busy)return null;
+ if(checksForSelection().some(x=>!x.ok)){notify('검산에서 불일치를 발견했습니다. 검산 페이지를 확인한 뒤 저장해 주세요.');return null;}
+ state.busy=true;const controls=$$('button,input,select').map(el=>[el,el.disabled]);controls.forEach(([el])=>el.disabled=true);
+ return ()=>{state.busy=false;controls.forEach(([el,disabled])=>{if(el.isConnected)el.disabled=disabled;});};
+}
+async function exportPPTX(options){
+ const unlock=lockExport();if(!unlock)return;
+ try{
+  if(!window.pptxgen)throw new Error('PPTX 모듈을 아직 불러오지 못했습니다. 잠시 후 다시 시도하세요.');
+  notify('편집 가능한 PPTX를 만들고 있습니다.');
+  const pptx=buildPptx(window.pptxgen,state.model,state.filter,options);
+  await pptx.writeFile({fileName:exportName(options.scope==='figures'?(options.figureId||'전체그림'):(options.tab||'5페이지_리포트'))+'.pptx',compression:true});
+  notify('PPTX를 저장했습니다. PowerPoint에서 글자·표·차트·개략도를 편집할 수 있습니다.');
+ }catch(e){notify(`PPTX 생성 실패: ${e.message}`);}finally{unlock();}
+}
+async function renderPNG(markup,width,height){
+ if(!window.html2pdf)throw new Error('이미지 모듈을 아직 불러오지 못했습니다. 잠시 후 다시 시도하세요.');
+ const root=$('#export-root');root.innerHTML=markup;await document.fonts.ready;
+ const worker=window.html2pdf().set({margin:0,html2canvas:{scale:2,backgroundColor:'#fff',logging:false,windowWidth:1600},jsPDF:{unit:'px',format:[width,height],orientation:'landscape',hotfixes:['px_scaling']}}).from(root.firstElementChild).toCanvas();
+ const canvas=await worker.get('canvas');return await new Promise((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(new Error('이미지를 만들지 못했습니다.')),'image/png'));
+}
+async function exportPNG(scope){
+ const unlock=lockExport();if(!unlock)return;
+ try{
+  notify(scope==='all'?'5페이지 PNG 묶음을 만들고 있습니다.':'PNG 그림을 만들고 있습니다.');
+  if(scope==='all'){
+   if(!window.JSZip)throw new Error('묶음 저장 모듈을 아직 불러오지 못했습니다.');
+   const zip=new window.JSZip();for(const [i,[tab,,label]]of NAV.slice(0,5).entries()){const blob=await renderPNG(report(tab),1600,900);zip.file(`${String(i+1).padStart(2,'0')}_${label}.png`,await blob.arrayBuffer());}
+   zip.file('읽어주세요.txt',`자료: NHTSA SGO ADS 제공 자료와 검수 기록\n분석 범위: ${selectionLabel()}\n사고 당시 ADS 확인: ${selected().length}건\n국내 통계는 한국교통안전공단의 별도 공식 발표값\n페이지 이미지: 3200 × 1800 px\n검산: ${checksForSelection().length}개 통과\n`);
+   download(await zip.generateAsync({type:'blob',compression:'DEFLATE'}),exportName('5페이지_PNG')+'.zip','application/zip');
+  }else if(scope==='figure'){
+   const f=chosenFigure();if(!f)throw new Error('저장할 그림이 없습니다.');download(await renderPNG(figureMarkup(f),1200,675),exportName(f.id)+'.png','image/png');
+  }else download(await renderPNG(report(state.tab),1600,900),exportName(state.tab)+'.png','image/png');
+  notify(scope==='all'?'5페이지 PNG 묶음을 저장했습니다.':'PNG 그림을 저장했습니다.');
+ }catch(e){notify(`이미지 저장 실패: ${e.message}`);}finally{$('#export-root').innerHTML='';unlock();}
+}
 async function exportPDF(all){
-  if(state.busy)return;state.busy=true;
-  const buttons=$$('[data-action^="pdf-"]');buttons.forEach(b=>b.disabled=true);
+  const unlock=lockExport();if(!unlock)return;
   const root=$('#export-root');
   try{
     if(!window.html2pdf)throw new Error('PDF 모듈을 아직 불러오지 못했습니다. 잠시 후 다시 시도하세요.');
@@ -270,6 +336,6 @@ async function exportPDF(all){
       else{const canvas=await worker.get('canvas');pdf.addPage([1600,900],'landscape');pdf.addImage(canvas.toDataURL('image/jpeg',.95),'JPEG',0,0,1600,900);}
     }
     pdf.save(exportName(all?'5페이지_리포트':state.tab)+'.pdf');notify(`${tabs.length}페이지 PDF를 저장했습니다.`);
-  }catch(e){notify(`PDF 생성 실패: ${e.message}`);}finally{root.innerHTML='';state.busy=false;buttons.forEach(b=>b.disabled=false);}
+  }catch(e){notify(`PDF 생성 실패: ${e.message}`);}finally{root.innerHTML='';unlock();}
 }
 init();
