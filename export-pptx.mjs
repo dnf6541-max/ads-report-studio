@@ -1,22 +1,23 @@
-import {contributionSummary,contributionInsights} from './contribution.mjs?v=20261124.10';
-import {sceneFor,locationInfo} from './scenes.mjs?v=20261124.10';
+import {analysisRows,analysisBasis} from './analysis.mjs?v=20261124.20';
+import {contributionSummary,contributionInsights} from './contribution.mjs?v=20261124.20';
+import {sceneFor,locationInfo} from './scenes.mjs?v=20261124.20';
 /* Editable PowerPoint export. Native charts include their Excel workbooks. */
-import {aggregate,filtered,pct,SEVERITY,CAR,VRU,countBy} from './analysis.mjs?v=20261124.10';
-import {figureCatalog,figureDataRows,transitionSummary,surfaceSummary} from './supplement.mjs?v=20261124.10';
+import {aggregate,filtered,pct,SEVERITY,CAR,VRU,countBy} from './analysis.mjs?v=20261124.20';
+import {figureCatalog,figureDataRows,transitionSummary,surfaceSummary} from './supplement.mjs?v=20261124.20';
 
-import {insightSummary} from './extended.mjs?v=20261124.11';
+import {insightSummary} from './extended.mjs?v=20261124.20';
 const C={navy:'193D50',teal:'148B82',blue:'277EAE',sky:'5AAAC8',amber:'D58A3B',muted:'637D8B',line:'D7E2E8',wash:'F3F7F9',grey:'83949E',white:'FFFFFF'};
 const palette=[C.teal,C.blue,C.sky,C.amber,C.grey,'B3C1C8'];
 const sevColor={none:C.teal,minor:'358EBC',moderate:'DF9F44',serious:'CB6A40',fatal:'AD4357',unknown:'B4BFC8'};
 const names={overview:'ADS 사고유형 및 충돌특성',cases:'ADS 중상·사망 사고 사례',status:'ADS 운행상태별 사고 특성',vru:'보행자·자전거·이륜차 등 사고',domestic:'국내 자율주행차 사고현황 및 운행 특성',contribution:'자율차 기여 가능성이 있는 사고의 우선검토'};
 const tabs=Object.keys(names),font='Malgun Gothic';
 const fmt=n=>Number(n).toLocaleString('ko-KR');
-const period=f=>`${f.from||f.to?`${f.from||'자료 시작'} ~ ${f.to||'자료 종료'}`:'전체 기간'} · ${f.company||'전체 보고 회사'}`;
+const period=f=>`${analysisBasis(f).label} · ${f.from||f.to?`${f.from||'자료 시작'} ~ ${f.to||'자료 종료'}`:'전체 기간'} · ${f.company||'전체 보고 회사'}`;
 
 export function buildPptx(PptxGenJS,model,filter={},options={}) {
  const pptx=new PptxGenJS();pptx.defineLayout({name:'REPORT_16_9',width:16,height:9});pptx.layout='REPORT_16_9';
  pptx.author='ADS Report Studio';pptx.subject='NHTSA SGO ADS 실제 보고자료와 검수 기록';pptx.title='ADS 사고분석 리포트';pptx.company='ADS Report Studio';pptx.lang='ko-KR';pptx.theme={headFontFace:font,bodyFontFace:font,lang:'ko-KR'};
- const figures=figureCatalog(model,filter),byId=new Map(figures.map(f=>[f.id,f])),rows=filtered(model.impact,filter),ads=filtered(model.ads,filter),a=aggregate(rows);
+ const figures=figureCatalog(model,filter),byId=new Map(figures.map(f=>[f.id,f])),rows=analysisRows(model,filter),ads=rows,a=aggregate(rows);
  const S=pptx.ShapeType;
  const txt=(s,t,x,y,w,h,fs=16,extra={})=>s.addText(String(t??''),{x,y,w,h,fontFace:font,fontSize:fs,color:C.navy,margin:0,breakLine:false,vertAnchor:'top',paraSpaceAfterPt:0,...extra});
  const rect=(s,x,y,w,h,fill=C.wash,line=fill,extra={})=>s.addShape(S.rect,{x,y,w,h,fill:{color:fill},line:{color:line,width:.5},...extra});
@@ -43,7 +44,7 @@ export function buildPptx(PptxGenJS,model,filter={},options={}) {
    items.forEach(([head,body],i)=>{const y=2.37+i*1.42;txt(s,String(i+1).padStart(2,'0'),11.63,y,.36,.3,14,{bold:true,color:C.teal});txt(s,head,12.02,y,3.45,.37,17,{bold:true});txt(s,body,11.63,y+.45,3.85,.83,12.7,{color:C.muted,breakLine:false});line(s,11.63,y+1.25,15.5,y+1.25);});
    rect(s,11.63,7.25,3.87,.95,'EAF5F2');rect(s,11.63,7.25,.04,.95,C.teal);txt(s,note,11.8,7.38,3.5,.65,12.5,{color:C.muted});
  }
- function notes(s,used,extra='') {if(used.length&&used.every(f=>f.tab==='domestic')){s.addNotes(`자료: 한국교통안전공단 · 2025.11.28 발표\n범위: 2022~2025년 9월 공식 발표 스냅샷. 미국 필터와 별도.\n출처: ${model.pkg.domestic.sourceUrl}\n${used.map(f=>JSON.stringify({id:f.id,title:f.title,insight:f.insight,note:f.note,data:figureDataRows(f)})).join('\n')}`);return;}s.addNotes(`자료: NHTSA SGO ADS 제공 CSV와 기존 검수 기록\n범위: ${period(filter)}\n사고 당시 ADS 확인: ${rows.length}건 / 운행상태 비교: ${ads.length}건\n단위: 차량별 사고보고. 사고율·과실·감소율을 의미하지 않음.\n${extra}\n${used.map(f=>JSON.stringify({id:f.id,title:f.title,insight:f.insight,note:f.note,data:figureDataRows(f)})).join('\n')}`);}
+ function notes(s,used,extra='') {if(used.length&&used.every(f=>f.tab==='domestic')){s.addNotes(`자료: 한국교통안전공단 · 2025.11.28 발표\n범위: 2022~2025년 9월 공식 발표 스냅샷. 미국 필터와 별도.\n출처: ${model.pkg.domestic.sourceUrl}\n${used.map(f=>JSON.stringify({id:f.id,title:f.title,insight:f.insight,note:f.note,data:figureDataRows(f)})).join('\n')}`);return;}s.addNotes(`자료: NHTSA SGO ADS 제공 CSV와 기존 검수 기록\n범위: ${period(filter)}\n선택 분석대상: ${rows.length}건 / 이 중 ADS 운행 확인: ${rows.filter(r=>r.decision==='include').length}건\n단위: 차량별 사고보고. 사고율·과실·감소율을 의미하지 않음.\n${extra}\n${used.map(f=>JSON.stringify({id:f.id,title:f.title,insight:f.insight,note:f.note,data:figureDataRows(f)})).join('\n')}`);}
  // Requested accident diagrams use editable native PowerPoint objects.
  function diagram(s,type,x,y,w,h) {
    const X=v=>x+v/300*w,Y=v=>y+v/230*h;
@@ -81,7 +82,7 @@ export function buildPptx(PptxGenJS,model,filter={},options={}) {
    if(tab==='overview'){
      section(s,'01','충돌대상별 사고 구성',.55,1.47,10.5);bar(s,byId.get('counterparts'),.55,1.97,10.55,2.75,13);
      section(s,'02','자동차 상대 대표 상황',.55,4.95,4.95);
-     const rear=a.scenarios.filter(x=>['01','02'].includes(x.key)).reduce((n,x)=>n+x.count,0),lead=[{label:'정지·직진·감속 후미추돌',count:rear},...['03','04','05'].map(k=>a.scenarios.find(x=>x.key===k))];lead.push({label:'나머지 유형',count:a.cars.length-lead.reduce((n,x)=>n+x.count,0)});
+     const rear=a.scenarios.filter(x=>['01','02'].includes(x.key)).reduce((n,x)=>n+x.count,0),lead=[{label:'정지·직진·감속 후미추돌',count:rear},...['03','04','05'].map(k=>a.scenarios.find(x=>x.key===k))];lead.push({label:'그 외·분류 미검토',count:a.cars.length-lead.reduce((n,x)=>n+x.count,0)});
      bar(s,{items:lead,denominator:a.cars.length},.5,5.47,5.1,2.12,10);txt(s,`분모: 자동차 상대 ${fmt(a.cars.length)}건\n세부 8유형은 개별 그림과 CSV에서 확인`,.6,7.75,4.9,.43,10,{color:C.muted});
      section(s,'03','발생환경',5.85,4.95,5.2);
      const place=[{label:'교차로',count:rows.filter(r=>r.roadway==='Intersection').length},{label:'그 외·불명',count:rows.filter(r=>r.roadway!=='Intersection').length}];

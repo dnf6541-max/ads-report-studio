@@ -106,6 +106,11 @@ function normalize(raw,g,evidence,sourceNames,sourceMeta){
     roadway:value(raw,'Roadway Type'),driver:value(raw,'Driver / Operator Type')};
 }
 export function filtered(rows,{from='',to='',company=''}={}){return rows.filter(r=>(!from||r.month&&r.month>=from)&&(!to||r.month&&r.month<=to)&&(!company||r.company===company));}
+export const ANALYSIS_BASES={reported:{label:'보고된 검수 대상',short:'검수 대상',description:'ADS 시스템으로 보고된 운행상태 비교 대상. 수동·원격·상태 확인 부족·자료 불일치 포함.',source:'ads'},confirmed:{label:'사고 당시 ADS 운행 확인',short:'ADS 운행 확인',description:'검수 대상 중 사고 당시 ADS 운행이 확인된 보고만 포함.',source:'impact'}};
+export function analysisBasis(filter={}){const key=filter.basis??'reported';if(!Object.hasOwn(ANALYSIS_BASES,key))throw new Error('유효하지 않은 분석 기준입니다.');return {key,...ANALYSIS_BASES[key]};}
+export function analysisRows(model,filter={}){return filtered(model[analysisBasis(filter).source],filter);}
+export const scenarioKey=r=>Object.hasOwn(SCENARIOS,r.scenario)?r.scenario:'U';
+export const scenarioLabel=r=>CAR.has(r.counterpart)?(SCENARIOS[scenarioKey(r)]||'상황 분류 미검토'):'자동차 대표 유형 대상 밖';
 export function countBy(rows,key,order=[]){const counts=new Map(order.map(k=>[k,0]));for(const r of rows){const k=typeof key==='function'?key(r):r[key];counts.set(k,(counts.get(k)||0)+1);}return [...counts].map(([key,count])=>({key,count}));}
 export function counterpartGroup(r){
   const c=r.counterpart;
@@ -122,9 +127,9 @@ export function movementGroup(r){const m=value(r.raw,'SV Pre-Crash Movement');if
 export function contactCounts(rows){const areas={전면:['Front Left','Front','Front Right'],측면:['Left','Right'],후면:['Rear Left','Rear','Rear Right'],상하부:['Top','Bottom']};const out=Object.entries(areas).map(([key,parts])=>({key,count:rows.filter(r=>parts.some(p=>value(r.raw,`SV Contact Area - ${p}`)==='Y')).length}));out.push({key:'미기재·불명',count:rows.filter(r=>!Object.values(areas).flat().some(p=>value(r.raw,`SV Contact Area - ${p}`)==='Y')).length});return out;}
 export function aggregate(rows){
   const cars=rows.filter(r=>CAR.has(r.counterpart)),vru=rows.filter(r=>VRU.has(r.counterpart));
-  const scenarios=countBy(cars,'scenario',Object.keys(SCENARIOS)).filter(x=>x.key!=='');
+  const scenarios=countBy(cars,scenarioKey,Object.keys(SCENARIOS));
   return {n:rows.length,cars,vru,counterparts:countBy(rows,counterpartGroup).sort((a,b)=>b.count-a.count),
-    scenarios:scenarios.map(x=>({...x,label:SCENARIOS[x.key]||'미분류'})),
+    scenarios:scenarios.map(x=>({...x,label:SCENARIOS[x.key]||'상황 분류 미검토'})),
     time:countBy(rows,'time',['day','night','unknown']),lighting:countBy(rows.filter(r=>r.lighting),'lighting'),
     severity:countBy(rows,'severity',Object.keys(SEVERITY)),roadway:countBy(rows,'roadway'),
     years:countBy(rows,r=>r.month.slice(0,4)).sort((a,b)=>a.key.localeCompare(b.key)),contact:contactCounts(rows)};
@@ -138,7 +143,7 @@ export function audit(model,rows=model.impact){
   check('사고 상대 분류 합계',a.counterparts.reduce((n,x)=>n+x.count,0),rows.length);
   check('주·야간·시간 불명 합계',a.time.reduce((n,x)=>n+x.count,0),rows.length);
   check('피해수준 분류 합계',a.severity.reduce((n,x)=>n+x.count,0),rows.length);
-  check('자동차 대표 유형 + 그 외',a.scenarios.reduce((n,x)=>n+x.count,0),a.cars.length);
+  check('자동차 대표 유형 + 그 외 + 상황 분류 미검토',a.scenarios.reduce((n,x)=>n+x.count,0),a.cars.length);
   check('보고번호 중복 없음',new Set(rows.map(r=>r.id)).size,rows.length);
   const selectedIds=new Map(model.impact.map(r=>[r.id,r]));
   const cited=model.pkg.cases.filter(c=>selectedIds.has(c.id));

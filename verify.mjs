@@ -3,8 +3,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import zlib from 'node:zlib';
-import {buildModel,audit,aggregate,dayNight,parseCSV,parseMonth,severity,filtered,sample,pct,contactCounts,selectFields,sha256,canonical,VRU} from './analysis.mjs?v=20261124.10';
-import {surfaceSummary,contactPattern,transitionSummary,timingEvidence,TIMING_REVIEW,figureCatalog,figureDataRows,extraAudit} from './supplement.mjs?v=20261124.10';
+import {buildModel,audit,aggregate,dayNight,parseCSV,parseMonth,severity,filtered,sample,pct,contactCounts,selectFields,sha256,canonical,VRU} from './analysis.mjs?v=20261124.20';
+import {surfaceSummary,contactPattern,transitionSummary,timingEvidence,TIMING_REVIEW,figureCatalog,figureDataRows,extraAudit} from './supplement.mjs?v=20261124.20';
 const encoded=(await import('./data-base64.mjs?v=20261124.10')).default;
 const pkg=JSON.parse(zlib.gunzipSync(Buffer.from(encoded,'base64')));
 const model=await buildModel(pkg);
@@ -120,7 +120,7 @@ test('figure exports use the same filters, denominators and actual data',()=>{
     const f=figures.find(x=>x.id===id);assert.equal(f.items.reduce((n,x)=>n+x.count,0),f.denominator,id);
     assert.equal(figureDataRows(f).reduce((n,x)=>n+x.건수,0),f.denominator,id);
   }
-  const y=figureCatalog(model,{from:'2021-01',to:'2021-12'});assert.equal(y.find(x=>x.id==='counterparts').denominator,34);
+  const y=figureCatalog(model,{from:'2021-01',to:'2021-12'});assert.equal(y.find(x=>x.id==='counterparts').denominator,67);
   const none=figureCatalog(model,{from:'2028-01'});assert.equal(none.find(x=>x.id==='counterparts').denominator,0);
   assert.equal(none.filter(x=>x.kind==='case').length,0);assert.deepEqual(none.find(x=>x.id==='domestic-years'),figures.find(x=>x.id==='domestic-years'));
   assert.ok([...audit(model),...extraAudit(model)].every(x=>x.ok));assert.equal(audit(model).length+extraAudit(model).length,32);

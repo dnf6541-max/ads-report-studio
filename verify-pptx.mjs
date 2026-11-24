@@ -6,8 +6,8 @@ import zlib from 'node:zlib';
 import PptxGenJS from 'pptxgenjs';
 import JSZip from 'jszip';
 import vm from 'node:vm';
-import {buildModel} from './analysis.mjs?v=20261124.10';
-import {buildPptx} from './export-pptx.mjs?v=20261124.10';
+import {buildModel} from './analysis.mjs?v=20261124.20';
+import {buildPptx} from './export-pptx.mjs?v=20261124.20';
 const encoded=(await import('./data-base64.mjs?v=20261124.10')).default;
 const pkg=JSON.parse(zlib.gunzipSync(Buffer.from(encoded,'base64')));
 const model=await buildModel(pkg);
@@ -22,13 +22,13 @@ test('six native editable pages with charts, Excel data, tables, text, shapes an
   assert.ok(xml.every(s=>s.includes('<a:t>')));assert.ok(xml[3].includes('<a:tbl>'));
   assert.ok(xml[1].includes('30412-6144'));assert.ok(xml[1].includes('30270-11713'));assert.ok(xml[2].includes('차내 전환 시차 16건'));
   assert.ok(xml.every(s=>!/<a:ext [^>]*(?:cx|cy)="-/.test(s)),'No negative shape extents');
-  const first=await z.file(charts[0]).async('string');assert.ok(first.includes('1605'));assert.ok(first.includes('593'));assert.ok(first.includes('maxMin'));
-  assert.ok((await z.file('ppt/notesSlides/notesSlide1.xml').async('string')).includes('2752'));
+  const first=await z.file(charts[0]).async('string');assert.ok(first.includes('1753'));assert.ok(first.includes('642'));assert.ok(first.includes('maxMin'));
+  assert.ok((await z.file('ppt/notesSlides/notesSlide1.xml').async('string')).includes('선택 분석대상: 3031건'));
   fs.mkdirSync(new URL('./qa/',import.meta.url),{recursive:true});await p.writeFile({fileName:new URL('./qa/native-main.pptx',import.meta.url).pathname,compression:true});
 });
 test('49 individual figures and reviewed cases, including exact surface and transition data',async()=>{
   const p=buildPptx(PptxGenJS,model,{}, {scope:'figures'}),z=await zip(p);assert.equal(slides(z).length,49);
-  const surface=await z.file('ppt/notesSlides/notesSlide7.xml').async('string');assert.ok(surface.includes('1224'));assert.ok(surface.includes('1296'));
+  const surface=await z.file('ppt/notesSlides/notesSlide7.xml').async('string');assert.ok(surface.includes('1400'));assert.ok(surface.includes('1480'));
   const timing=await z.file('ppt/notesSlides/notesSlide10.xml').async('string');assert.ok(timing.includes('160'));assert.ok(timing.includes('176'));
   await p.writeFile({fileName:new URL('./qa/native-figures.pptx',import.meta.url).pathname,compression:true});
 });
@@ -45,7 +45,7 @@ test('vendored browser bundle exposes the constructor used by the app',()=>{
  const context={setTimeout,clearTimeout,Buffer};context.window=context;context.self=context;
  vm.runInNewContext(fs.readFileSync(new URL('./pptxgen.bundle.js',import.meta.url),'utf8'),context);
  assert.equal(typeof context.PptxGenJS,'function');assert.equal(typeof context.JSZip,'function');
- const app=fs.readFileSync(new URL('./app.mjs?v=20261124.10',import.meta.url),'utf8');assert.ok(app.includes('buildPptx(window.PptxGenJS,'));
+ const app=fs.readFileSync(new URL('./app.mjs?v=20261124.20',import.meta.url),'utf8');assert.ok(app.includes('buildPptx(window.PptxGenJS,'));
 });
 
 test('domestic figure and slide notes retain their separate Korean official source',async()=>{

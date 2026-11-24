@@ -1,11 +1,12 @@
-import {figureInsight} from './figure-insights.mjs?v=20261124.10';
-import {contributionFigures} from './contribution.mjs?v=20261124.10';
+import {analysisRows,analysisBasis} from './analysis.mjs?v=20261124.20';
+import {figureInsight} from './figure-insights.mjs?v=20261124.20';
+import {contributionFigures} from './contribution.mjs?v=20261124.20';
 /* Additional evidence-based summaries. The original dataset/reviews are unchanged. */
-import {value,countBy,contactCounts,CAR,VRU,MOVEMENT,movementGroup,SEVERITY,DRIVER,LIGHTING,SCENARIOS,aggregate,filtered,pct} from './analysis.mjs?v=20261124.10';
+import {value,countBy,contactCounts,CAR,VRU,MOVEMENT,movementGroup,SEVERITY,DRIVER,LIGHTING,SCENARIOS,aggregate,filtered,pct} from './analysis.mjs?v=20261124.20';
 
-import {extendedFigures,controlSummary,controlEvidence} from './extended.mjs?v=20261124.10';
+import {extendedFigures,controlSummary,controlEvidence} from './extended.mjs?v=20261124.20';
 import {TIMING_CONTROL} from './review-data.mjs?v=20261124.10';
-import {environmentSummary,ROADWAY} from './environment.mjs?v=20261124.10';
+import {environmentSummary,ROADWAY} from './environment.mjs?v=20261124.20';
 export const TIMING_REVIEW=TIMING_CONTROL.records;
 const norm=s=>String(s||'').replace(/\s+/g,' ').trim();
 export function timingEvidence(r){
@@ -46,12 +47,12 @@ export function extraAudit(model,rows=model.impact,ads=model.ads) {
 const chart=(id,tab,title,items,denominator,note='',extra={})=>({id,tab,title,kind:'bar',items,denominator,note,...extra});
 const table=(id,tab,title,columns,rows,note='')=>({id,tab,title,kind:'table',columns,rows,note});
 export function figureCatalog(model,filter={}) {
- const rows=filtered(model.impact,filter),ads=filtered(model.ads,filter),a=aggregate(rows),vru=a.vru,n=rows.length;
+ const rows=analysisRows(model,filter),ads=rows,a=aggregate(rows),vru=a.vru,n=rows.length;
  const surf=surfaceSummary(rows),timing=transitionSummary(ads),env=environmentSummary(rows),cols=['직진','회전','변경·합류','정지·주차','기타·불명'];
  const sev=rs=>countBy(rs,'severity',Object.keys(SEVERITY)).map(x=>({...x,label:SEVERITY[x.key]}));
  const figs=[
- chart('counterparts','overview','충돌대상별 사고 구성',a.counterparts,n,'분모: 사고 당시 ADS 운행 확인 대상. 차량별 사고보고 기준.'),
- chart('car-situations','overview','자동차 상대 8가지 대표 상황',a.scenarios,a.cars.length,'정지 중 후미추돌과 직진·감속 중 후미추돌을 구분. 그 외를 포함한 합계가 분모와 일치.'),
+ chart('counterparts','overview','충돌대상별 사고 구성',a.counterparts,n,`분모: ${analysisBasis(filter).label}. 차량별 사고보고 기준.`),
+ chart('car-situations','overview','자동차 상대 8가지 대표 상황',a.scenarios,a.cars.length,'정지·주행 후미추돌을 구분. 그 외와 상황 분류 미검토를 포함한 합계가 분모와 일치. 기존 분류가 없는 보고는 임의로 분류하지 않음.'),
  chart('contact-pattern','overview','ADS 차량의 접촉부위 구성',countBy(rows,contactPattern,Object.keys(CONTACT_PATTERN)).map(x=>({...x,label:CONTACT_PATTERN[x.key]})),n,'한 사고를 한 범주에 분류. 접촉부위는 충돌 방향·가해 여부와 다름. 접촉·긁힘은 별도 사고형태로 자동 추정하지 않음.'),
  chart('roadway','overview','사고 발생 장소',a.roadway.map(x=>({...x,label:ROADWAY[x.key]||x.key||'미기재'})),n),
  chart('day-night','overview','신고 시각에 따른 주·야간',a.time.map(x=>({...x,label:({day:'주간',night:'야간',unknown:'시간 불명'})[x.key]})),n,'주간 06:00–17:59 / 야간 18:00–05:59. 실제 밝기·일출·일몰 기준과 구분.'),
@@ -72,12 +73,14 @@ export function figureCatalog(model,filter={}) {
  ];
  const byId=new Map(rows.map(r=>[r.id,r]));
  for(const c of model.pkg.cases)if(byId.has(c.id)){const r=byId.get(c.id);figs.push({id:'case-'+r.id,tab:'cases',kind:'case',title:c.category,record:r,case:c,note:`보고 ${r.id} / 경위 v${r.narrativeVersion}. 원문을 요약한 개략도이며 법적 과실 판정이 아님.`});}
- return [...figs,...extendedFigures(model,filter),...contributionFigures(rows)].map(f=>({...f,insight:figureInsight(f)}));
+ return [...figs,...extendedFigures(model,filter),...contributionFigures(rows)].map(f=>({...f,basis:f.tab==='domestic'?'domestic':analysisBasis(filter).key,basisLabel:f.tab==='domestic'?'국내 공식 발표자료':analysisBasis(filter).label,insight:figureInsight(f)}));
 }
-export function figureDataRows(f) {
+function figureDataRowsCore(f) {
  if(f.kind==='bar')return f.items.map(x=>({항목:x.label||x.key,건수:x.count,분모:f.denominator??'',구성비:f.denominator==null?'':pct(x.count,f.denominator),기준:f.note}));
  if(f.kind==='table')return f.rows.map(r=>Object.fromEntries(f.columns.map((c,i)=>[c,r[i]])));
  if(f.kind==='grouped')return f.groups.flatMap(g=>g.items.map(x=>({운행상태:g.label,피해수준:x.label,건수:x.count,분모:g.total,구성비:pct(x.count,g.total)})));
  if(f.kind==='case')return [{보고번호:f.record.id,발생월:f.record.month,경위버전:f.record.narrativeVersion,설명:f.case.summary,근거:f.case.evidence,확인할점:f.case.caution}];
  return [{항목:f.title,값:f.value,설명:f.description,기준:f.note}];
 }
+
+export function figureDataRows(f){return figureDataRowsCore(f).map(row=>({분석기준:f.basisLabel||'기준 미지정',...row}));}

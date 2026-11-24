@@ -1,4 +1,4 @@
-import {pct} from './analysis.mjs?v=20261124.10';
+import {pct} from './analysis.mjs?v=20261124.20';
 export function figureInsight(f){
  const item=k=>f.items?.find(x=>x.key===k),n=f.denominator||0;
  if(f.kind==='case')return `${f.record.id}: ${f.case.summary}`;

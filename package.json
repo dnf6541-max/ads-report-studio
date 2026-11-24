@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test verify.mjs verify-extended.mjs verify-pptx.mjs"
+    "test": "node --test verify.mjs verify-extended.mjs verify-pptx.mjs verify-basis.mjs"
   },
   "devDependencies": {
     "pptxgenjs": "4.0.1",
