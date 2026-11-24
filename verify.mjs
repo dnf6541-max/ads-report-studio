@@ -3,9 +3,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import zlib from 'node:zlib';
-import {buildModel,audit,aggregate,dayNight,parseCSV,parseMonth,severity,filtered,sample,pct,contactCounts,selectFields,sha256,canonical,VRU} from './analysis.mjs';
-import {surfaceSummary,contactPattern,transitionSummary,timingEvidence,TIMING_REVIEW,figureCatalog,figureDataRows,extraAudit} from './supplement.mjs';
-const encoded=(await import('./data-base64.mjs')).default;
+import {buildModel,audit,aggregate,dayNight,parseCSV,parseMonth,severity,filtered,sample,pct,contactCounts,selectFields,sha256,canonical,VRU} from './analysis.mjs?v=20261124.10';
+import {surfaceSummary,contactPattern,transitionSummary,timingEvidence,TIMING_REVIEW,figureCatalog,figureDataRows,extraAudit} from './supplement.mjs?v=20261124.10';
+const encoded=(await import('./data-base64.mjs?v=20261124.10')).default;
 const pkg=JSON.parse(zlib.gunzipSync(Buffer.from(encoded,'base64')));
 const model=await buildModel(pkg);
 const freshSources=()=>structuredClone(pkg.sources);
@@ -102,10 +102,10 @@ test('contact pattern partitions records and preserves multiple/unknown flags',(
   assert.equal(contactPattern(row('Top')),'multiple');assert.equal(contactPattern(row()),'unknown');
   const categories=new Set(['front','side','rear','multiple','unknown']);assert.ok(model.impact.every(r=>categories.has(contactPattern(r))));
 });
-test('19 transition timings carry exact evidence and version; seven reported within five seconds',()=>{
-  const t=transitionSummary(model.ads);assert.equal(TIMING_REVIEW.length,19);assert.equal(new Set(TIMING_REVIEW.map(t=>t.id)).size,19);
-  assert.equal(t.base.length,234);assert.equal(t.known.length,19);assert.deepEqual(t.counts.map(x=>x.count),[7,12,215]);
-  assert.deepEqual(t.known.filter(x=>x.t.bucket==='within5').map(x=>x.r.id).sort(),['30530-16297','30413-13083','30270-10596','988-9101','988-6565','30410-4799','30270-31'].sort());
+test('16 confirmed on-board timing intervals exclude disengagement-only and manual-duration records',()=>{
+  const t=transitionSummary(model.ads);assert.equal(TIMING_REVIEW.length,21);assert.equal(new Set(TIMING_REVIEW.map(t=>t.id)).size,21);
+  assert.equal(t.base.length,176);assert.equal(t.known.length,16);assert.deepEqual(t.counts.map(x=>x.count),[7,9,160]);
+  assert.deepEqual(t.known.filter(x=>x.t.bucket==='within5').map(x=>x.r.id).sort(),['30530-16297','30413-13083','30270-10596','988-9101','988-6565','30270-10660','30270-31'].sort());
   const r=model.ads.find(r=>r.id==='30270-10596');assert.equal(timingEvidence(r).version,'2');
   assert.equal(timingEvidence({...r,narrativeVersion:'3'}),null);assert.equal(timingEvidence({...r,decision:'include'}),null);
   assert.equal(timingEvidence({...r,narrative:'The vehicle was stationary for five seconds.'}),null);
@@ -114,7 +114,7 @@ test('19 transition timings carry exact evidence and version; seven reported wit
   const lower=t.known.filter(x=>x.t.kind==='lower');assert.equal(lower.length,2);assert.ok(lower.every(x=>x.t.bucket==='over5'));
 });
 test('figure exports use the same filters, denominators and actual data',()=>{
-  const figures=figureCatalog(model);assert.equal(figures.length,33);assert.equal(new Set(figures.map(x=>x.id)).size,33);
+  const figures=figureCatalog(model);assert.equal(figures.length,49);assert.equal(new Set(figures.map(x=>x.id)).size,49);
   assert.equal(figures.filter(x=>x.kind==='case').length,14);
   for(const id of ['counterparts','car-situations','contact-pattern','roadway','day-night','lighting','road-surface','operating-state','operator','transition-time','vru-types','vru-severity']){
     const f=figures.find(x=>x.id===id);assert.equal(f.items.reduce((n,x)=>n+x.count,0),f.denominator,id);

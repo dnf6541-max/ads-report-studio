@@ -1,45 +1,21 @@
+import {figureInsight} from './figure-insights.mjs?v=20261124.10';
+import {contributionFigures} from './contribution.mjs?v=20261124.10';
 /* Additional evidence-based summaries. The original dataset/reviews are unchanged. */
-import {value,countBy,contactCounts,CAR,VRU,MOVEMENT,movementGroup,SEVERITY,DRIVER,LIGHTING,SCENARIOS,aggregate,filtered,pct} from './analysis.mjs';
+import {value,countBy,contactCounts,CAR,VRU,MOVEMENT,movementGroup,SEVERITY,DRIVER,LIGHTING,SCENARIOS,aggregate,filtered,pct} from './analysis.mjs?v=20261124.10';
 
-// Each item was checked against the reviewed Narrative version. Approximate
-// reported times retain that qualification. Bounds are never made exact.
-export const TIMING_REVIEW = [
- ['30530-16297','약 2초',2,'approx','The vehicle operator performed a disengagement approximately 2 seconds before the collision'],
- ['35021-16268','약 9초',9,'approx','Approximately nine seconds after the disengagement'],
- ['30413-16218','28초 이후',28,'lower','Twenty-eight seconds after the disengagement, the manually operated AV, which had queued behind a van at a red light, rolled forward'],
- ['30530-15781','약 12초',12,'approx','approximately 12 seconds before the collision'],
- ['30413-13083','3초',3,'exact','The Ego made contact with the curb 3 seconds after switching into manual'],
- ['30490-11693','7.5초',7.5,'exact','the operator disengaged the automated driving system 7.5 seconds prior to the vehicle mounting the curb'],
- ['30270-10596','약 2초',2,'approx',"The Waymo AV's Level 4 ADS was engaged until approximately two seconds before the collision"],
- ['30391-10295','약 10초',10,'approx','operating in manual mode for approximately 10 seconds prior to the incident'],
- ['30291-9651','15초',15,'exact','Fifteen seconds prior to the incident, the operator disengaged autonomy'],
- ['30413-9109','25초',25,'exact','This impact occurs 25 seconds after last being in autonomous mode'],
- ['988-9101','약 5초',5,'approx','This minor crash occurred approximately 5 seconds after the Kodiak Safety Driver disengaged the self-driving system'],
- ['988-6565','약 5초',5,'approx','transitioned the vehicle from autonomous to manual mode approximately 5 seconds prior to impact'],
- ['30610-5224','약 11초 이후',11,'lower','Approximately eleven seconds after disengaging, the driver proceeded in manual mode making a right turn and struck the curb'],
- ['30391-5009','약 21.5초',21.5,'approx','disengaged the system from autonomous mode approximately 21.5 seconds prior to impact'],
- ['30410-4799','1초 미만',1,'upper','The safety operator disengaged autonomous mode less than one second before the collision'],
- ['502-4131','21초',21,'exact','While in Manual mode for 21 seconds, the Test Specialist made a right turn'],
- ['30270-31','약 1초',1,'approx','transitioned the vehicle from autonomous to manual mode approximately 1 second before the impact occurred'],
- ['30413-1130','7초',7,'timestamps','16:17:37 By means of an accelerator pedal push the vehicle is moved into manual mode'],
- ['30610-1091','10초',10,'exact','transitioned out of its ODD into manual mode 10 seconds before the contact'],
-].map(([id,label,seconds,kind,evidence])=>({id,version:id==='30270-10596'?'2':'1',label,seconds,kind,evidence,
-  secondEvidence:id==='30413-1130'?'16:17:44 Safety operator manually continues straight':''}));
-
+import {extendedFigures,controlSummary,controlEvidence} from './extended.mjs?v=20261124.10';
+import {TIMING_CONTROL} from './review-data.mjs?v=20261124.10';
+import {environmentSummary,ROADWAY} from './environment.mjs?v=20261124.10';
+export const TIMING_REVIEW=TIMING_CONTROL.records;
 const norm=s=>String(s||'').replace(/\s+/g,' ').trim();
-export function timingEvidence(r) {
- const t=TIMING_REVIEW.find(x=>x.id===r.id);
- if(!t||r.decision!=='non_ads'||String(r.narrativeVersion)!==t.version||!norm(r.narrative).includes(norm(t.evidence))||(t.secondEvidence&&!norm(r.narrative).includes(norm(t.secondEvidence))))return null;
- return {...t,bucket:t.kind==='lower'?(t.seconds>5?'over5':'unknown'):(t.seconds<=5?'within5':'over5')};
+export function timingEvidence(r){
+ const t=TIMING_REVIEW.find(x=>x.id===r.id),c=controlEvidence(r);
+ if(!t||!t.eligibleForConfirmedOnBoardTiming||c?.controlCategory!=='on_board_transition'||String(t.narrativeVersion)!==r.narrativeVersion||!t.evidence.every(s=>norm(r.narrative).includes(norm(s))))return null;
+ return {...t,version:String(t.narrativeVersion),seconds:t.reportedSeconds,label:`${t.kind==='approx'?'약 ':''}${t.reportedSeconds}초${t.kind==='lower'?' 이후':''}`,bucket:t.fiveSecondBucket,evidence:t.evidence.join('\n'),secondEvidence:'',note:t.timingNote};
 }
-export function transitionSummary(rows) {
- const base=rows.filter(r=>r.decision==='non_ads');
- const details=base.map(r=>({r,t:timingEvidence(r)})).filter(x=>x.t);
- const known=details.filter(x=>x.t.bucket!=='unknown');
- const counts=[{key:'within5',label:'5초 이내 · 약 표현 포함',count:known.filter(x=>x.t.bucket==='within5').length},
- {key:'over5',label:'5초 초과 · 하한 포함',count:known.filter(x=>x.t.bucket==='over5').length},
- {key:'unknown',label:'시차 구분 미확인',count:base.length-known.length}];
- return {base,details,known,counts};
+export function transitionSummary(rows){
+ const base=controlSummary(rows).manual,details=base.map(r=>({r,t:timingEvidence(r)})).filter(x=>x.t),known=details.filter(x=>['within5','over5'].includes(x.t.bucket));
+ return {base,details,known,counts:[{key:'within5',label:'5초 이내 · 약 표현 포함',count:known.filter(x=>x.t.bucket==='within5').length},{key:'over5',label:'5초 초과 · 하한 포함',count:known.filter(x=>x.t.bucket==='over5').length},{key:'unknown',label:'시차 구분 미확인',count:base.length-known.length}]};
 }
 export const SURFACE={Dry:'건조',Wet:'젖음','Snow / Slush / Ice':'눈·진창·얼음','Other, see Narrative':'기타 노면'};
 export function surfaceSummary(rows) {
@@ -63,7 +39,7 @@ export function extraAudit(model,rows=model.impact,ads=model.ads) {
  check('단일·복합 접촉부위 분류 합계',countBy(rows,contactPattern).reduce((n,x)=>n+x.count,0),rows.length);
  check('전환 시차 구분 합계',t.counts.reduce((n,x)=>n+x.count,0),t.base.length);
  check('전환 시차 근거와 사용 경위 일치',t.details.filter(x=>timingEvidence(x.r)).length,t.details.length);
- if(model.baseline){const a=surfaceSummary(model.impact),b=transitionSummary(model.ads);check('기준 노면 정보 기재',a.available.length,1296);check('기준 건조 노면',a.counts.find(x=>x.key==='Dry').count,1224);check('기준 전환 시차 확인',b.known.length,19);check('기준 보고값 5초 이내',b.counts[0].count,7);}
+ if(model.baseline){const a=surfaceSummary(model.impact),b=transitionSummary(model.ads);check('기준 노면 정보 기재',a.available.length,1296);check('기준 건조 노면',a.counts.find(x=>x.key==='Dry').count,1224);check('기준 전환 시차 확인',b.known.length,16);check('기준 보고값 5초 이내',b.counts[0].count,7);}
  return checks;
 }
 
@@ -71,19 +47,19 @@ const chart=(id,tab,title,items,denominator,note='',extra={})=>({id,tab,title,ki
 const table=(id,tab,title,columns,rows,note='')=>({id,tab,title,kind:'table',columns,rows,note});
 export function figureCatalog(model,filter={}) {
  const rows=filtered(model.impact,filter),ads=filtered(model.ads,filter),a=aggregate(rows),vru=a.vru,n=rows.length;
- const surf=surfaceSummary(rows),timing=transitionSummary(ads),cols=['직진','회전','변경·합류','정지·주차','기타·불명'];
+ const surf=surfaceSummary(rows),timing=transitionSummary(ads),env=environmentSummary(rows),cols=['직진','회전','변경·합류','정지·주차','기타·불명'];
  const sev=rs=>countBy(rs,'severity',Object.keys(SEVERITY)).map(x=>({...x,label:SEVERITY[x.key]}));
  const figs=[
  chart('counterparts','overview','충돌대상별 사고 구성',a.counterparts,n,'분모: 사고 당시 ADS 운행 확인 대상. 차량별 사고보고 기준.'),
  chart('car-situations','overview','자동차 상대 8가지 대표 상황',a.scenarios,a.cars.length,'정지 중 후미추돌과 직진·감속 중 후미추돌을 구분. 그 외를 포함한 합계가 분모와 일치.'),
  chart('contact-pattern','overview','ADS 차량의 접촉부위 구성',countBy(rows,contactPattern,Object.keys(CONTACT_PATTERN)).map(x=>({...x,label:CONTACT_PATTERN[x.key]})),n,'한 사고를 한 범주에 분류. 접촉부위는 충돌 방향·가해 여부와 다름. 접촉·긁힘은 별도 사고형태로 자동 추정하지 않음.'),
- chart('roadway','overview','사고 발생 장소',a.roadway.map(x=>({...x,label:({Street:'일반도로',Intersection:'교차로','Parking Lot':'주차장',Highway:'고속도로','Traffic Circle':'회전교차로',Unknown:'불명'})[x.key]||x.key||'미기재'})),n),
+ chart('roadway','overview','사고 발생 장소',a.roadway.map(x=>({...x,label:ROADWAY[x.key]||x.key||'미기재'})),n),
  chart('day-night','overview','신고 시각에 따른 주·야간',a.time.map(x=>({...x,label:({day:'주간',night:'야간',unknown:'시간 불명'})[x.key]})),n,'주간 06:00–17:59 / 야간 18:00–05:59. 실제 밝기·일출·일몰 기준과 구분.'),
  chart('lighting','overview','기재된 조명 상태',a.lighting.map(x=>({...x,label:LIGHTING[x.key]})),a.lighting.reduce((s,x)=>s+x.count,0),'Lighting 기재·유효값만 분모. 주야간으로 결측치를 채우지 않음.'),
- chart('road-surface','overview','기재된 노면 상태',surf.counts,surf.available.length,`Roadway Surface 값이 있는 사고만 집계. 미기재·불명 ${surf.missing}건. 다른 양식의 습윤 체크 ${surf.wetFlagOnly}건은 이 분모에 합산하지 않음.`),
+ chart('road-surface','overview','기재된 노면 상태',surf.counts,surf.available.length,`Roadway Surface 값이 있는 사고만 집계. 양식에 열 없음 ${env.coverage.surface.find(x=>x.key==='not_collected').count}건. 다른 양식의 습윤 체크 ${surf.wetFlagOnly}건은 이 분모에 합산하지 않음.`),
  chart('operating-state','status','사고 당시 ADS 작동상태',countBy(ads,'decision',['include','non_ads','insufficient','conflict']).map(x=>({...x,label:({include:'ADS 운행 확인',non_ads:'수동·원격 운행 등',insufficient:'상태 확인 부족',conflict:'자료 불일치'})[x.key]})),ads.length,'시스템 변수·운행상태 변수·사고 경위의 선후관계를 검수한 결과.'),
- chart('operator','status','운전자·운영자 유형',countBy(ads,'driver').sort((a,b)=>b.count-a.count).map(x=>({...x,label:DRIVER[x.key]||x.key})),ads.length,'Driver / Operator Type 기준. None은 운전자·운영자 없음이며 승객 없음이 아님.'),
- chart('transition-time','status','수동전환 후 충돌까지의 보고 시차',timing.counts,timing.base.length,`구분 가능한 원문 ${timing.known.length}건. ‘약 5초’는 보고값 기준 5초 이내에 포함. 나머지를 모두 충돌 직전 전환으로 보지 않음.`),
+ chart('operator','status','운전자·운영자 유형',countBy(ads,'driver').sort((a,b)=>b.count-a.count).map(x=>({...x,label:DRIVER[x.key]||x.key})),ads.length,'Driver / Operator Type 기준. None은 운전업무 담당자 없음. 물리적 무인·승객 없음의 확정값이 아님.'),
+ chart('transition-time','status','수동전환 후 충돌까지의 보고 시차',timing.counts,timing.base.length,`차내 수동전환 확인 ${timing.base.length}건 중 시차 구분 ${timing.known.length}건. 단순 ADS 해제와 수동 지속시간은 제외. 약 표현·하한을 보존.`),
  {id:'state-severity',tab:'status',title:'운행상태별 피해수준',kind:'grouped',groups:[['ADS 운행 확인',ads.filter(r=>r.decision==='include')],['수동·원격 운행 등',ads.filter(r=>r.decision==='non_ads')],['상태 불충분·불일치',ads.filter(r=>['insufficient','conflict'].includes(r.decision))]].map(([label,rs])=>({label,total:rs.length,items:sev(rs)})),note:'각 상태 안에서의 구성비. 운행거리·노출량을 보정한 위험도 비교가 아님.'},
  chart('vru-types','vru','취약도로이용자 유형별 사고',countBy(vru,r=>VRU.get(r.counterpart),[...VRU.values()]),vru.length,'이륜차와 스쿠터·스케이트보드를 구분. 기타 비자동차 이용자는 별도.'),
  table('vru-movement','vru','취약도로이용자 유형과 ADS 행동',['상대',...cols],[...VRU.values()].map(v=>[v,...cols.map(m=>vru.filter(r=>VRU.get(r.counterpart)===v&&movementGroup(r)===m).length)]),'SV Pre-Crash Movement 기준. 정지·주차를 정지 시작 행동으로 해석하지 않음.'),
@@ -96,7 +72,7 @@ export function figureCatalog(model,filter={}) {
  ];
  const byId=new Map(rows.map(r=>[r.id,r]));
  for(const c of model.pkg.cases)if(byId.has(c.id)){const r=byId.get(c.id);figs.push({id:'case-'+r.id,tab:'cases',kind:'case',title:c.category,record:r,case:c,note:`보고 ${r.id} / 경위 v${r.narrativeVersion}. 원문을 요약한 개략도이며 법적 과실 판정이 아님.`});}
- return figs;
+ return [...figs,...extendedFigures(model,filter),...contributionFigures(rows)].map(f=>({...f,insight:figureInsight(f)}));
 }
 export function figureDataRows(f) {
  if(f.kind==='bar')return f.items.map(x=>({항목:x.label||x.key,건수:x.count,분모:f.denominator??'',구성비:f.denominator==null?'':pct(x.count,f.denominator),기준:f.note}));
