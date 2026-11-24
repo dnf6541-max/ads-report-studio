@@ -1,12 +1,12 @@
 /* Deterministic SGO aggregation. Shared by the browser and Node verification. */
-export const STATUS = {include:'사고 당시 ADS 운행 확인',non_ads:'충돌 전 수동·원격 전환 등',insufficient:'사고 당시 상태 확인 부족',conflict:'운행상태 자료 불일치',outside:'ADS 시스템 분석 밖',pending:'재검토 필요'};
+export const STATUS = {include:'사고 당시 ADS 운행 확인',non_ads:'사고 당시 수동·원격·해제 상태',insufficient:'사고 당시 상태 확인 부족',conflict:'운행상태 자료 불일치',outside:'ADS 시스템 분석 밖',pending:'재검토 필요'};
 export const SEVERITY = {none:'부상 보고 없음',minor:'경상 (Minor)',moderate:'중등도 (Moderate)',serious:'중상 (Serious)',fatal:'사망 (Fatality)',unknown:'불명'};
 export const SCENARIOS = {'01':'정지 중 후미추돌','02':'직진·감속 중 후미추돌','03':'상대차 후진','04':'상대차 통과·추월','05':'상대차 회전','06':'상대차 진로변경·합류','07':'반대차로 진입·역주행','08':'상대차 도로 진입','R':'그 외 자동차 사고'};
 export const CAR = new Set(['Passenger Car','SUV','Pickup Truck','Heavy Truck','Van','Bus','First Responder Vehicle']);
 export const VRU = new Map([['Non-Motorist: Pedestrian','보행자'],['Non-Motorist: Cyclist','자전거'],['Motorcycle','이륜차'],['Non-Motorist: Scooter - Skateboard','스쿠터·스케이트보드']]);
 export const COUNTERPART = {'Passenger Car':'승용차','SUV':'SUV','Pickup Truck':'픽업트럭','Heavy Truck':'대형 화물차','Van':'밴','Bus':'버스','First Responder Vehicle':'긴급차량','Other, see Narrative':'기타 상대 (경위 참고)','Other Fixed Object':'기타 고정물','Pole / Tree':'기둥·나무','Non-Motorist: Cyclist':'자전거','Motorcycle':'이륜차','Animal':'동물','Non-Motorist: Pedestrian':'보행자','Non-Motorist: Other':'기타 비자동차 이용자','Non-Motorist: Scooter - Skateboard':'스쿠터·스케이트보드','Unknown':'불명'};
 export const MOVEMENT = {'Stopped':'정지','Parked':'주차','Proceeding Straight':'직진','Making Left Turn':'좌회전','Making Right Turn':'우회전','Making U-Turn':'유턴','Changing Lanes':'차로변경','Merging':'합류','Passing':'통과·추월','Backing':'후진','Entering Traffic':'도로 진입','Crossing into Opposing Lane':'반대차로 진입','Traveling Wrong Way':'역주행','Parking Maneuver':'주차 조작','Lane / Road Departure':'차로·도로 이탈','Other, see Narrative':'기타 (경위 참고)','Unknown':'불명','NM Crossing Roadway':'도로 횡단','NM Moving Alongside Roadway':'도로 옆 이동','NM Moving on Sidewalk':'보도 이동','NM in Roadway - Other':'도로 내 기타','NM Waiting to Cross Roadway':'횡단 대기'};
-export const DRIVER = {'None':'운전자·운영자 없음','In-Vehicle (Commercial / Test)':'차내 운전자·운영자','Remote (Commercial / Test)':'원격 운영자','In-Vehicle and Remote (Commercial / Test)':'차내 및 원격 운영자','Consumer':'소비자 운전자','Other, see Narrative':'기타','Unknown':'불명','':'미기재'};
+export const DRIVER = {'None':'운전업무 담당자 없음','In-Vehicle (Commercial / Test)':'차내 운전자·운영자','Remote (Commercial / Test)':'원격 운영자','In-Vehicle and Remote (Commercial / Test)':'차내 및 원격 운영자','Consumer':'소비자 운전자','Other, see Narrative':'기타','Unknown':'불명','':'미기재'};
 export const LIGHTING = {'Daylight':'주광','Dawn / Dusk':'새벽·황혼','Dark - Lighted':'어두움·조명 있음','Dark - Not Lighted':'어두움·조명 없음','Dark - Unknown Lighting':'어두움·조명 불명','Other, see Narrative':'기타 조명'};
 const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
 export const value = (r,k) => String(r?.[k] ?? '').trim();
@@ -57,7 +57,7 @@ export function canonical(raw){return JSON.stringify(Object.fromEntries(Object.k
 export async function sha256(s){const b=typeof s==='string'?new TextEncoder().encode(s):s;const h=await crypto.subtle.digest('SHA-256',b);return [...new Uint8Array(h)].map(x=>x.toString(16).padStart(2,'0')).join('');}
 const relation = raw => {const a=value(raw,'Same Incident ID'),b=value(raw,'Same Vehicle ID');return a&&b&&!/unknown|none|^n\/?a$/i.test(a+b)?`${a}|${b}`:'';};
 export async function buildModel(pkg,sources=pkg.sources) {
-  const latest=new Map(), versions=new Map(), rawSource=new Map(), duplicates=[];let rawCount=0,compliance=0;
+  const latest=new Map(), versions=new Map(), rawSource=new Map(), sourceMeta=new Map(), duplicates=[];let rawCount=0,compliance=0;
   for(const s of sources)for(const raw of s.rows){
     rawCount++;
     if(value(raw,'Report Type')==='No New or Updated Incident Reports'){compliance++;continue;}
@@ -65,7 +65,7 @@ export async function buildModel(pkg,sources=pkg.sources) {
     if(!id || !/^\d+$/.test(v))throw new Error('보고번호 또는 버전이 없는 사고 기록이 있습니다.');
     const key=`${id}|${v}`,prev=versions.get(key);
     if(prev && canonical(prev)!==canonical(raw))duplicates.push(key);
-    versions.set(key,raw);rawSource.set(key,s.name);
+    versions.set(key,raw);rawSource.set(key,s.name);sourceMeta.set(key,{era:s.era,headers:s.headers||[]});
     if(!latest.has(id)||+v>+latest.get(id)['Report Version']) latest.set(id,raw);
   }
   if(duplicates.length)throw new Error(`같은 보고번호·버전에 서로 다른 값이 있습니다 (${duplicates.slice(0,5).join(', ')}). 충돌을 해결한 뒤 불러오세요.`);
@@ -84,20 +84,20 @@ export async function buildModel(pkg,sources=pkg.sources) {
       if(newRelations.has(relation(r)))reasons.push('같은 사고·차량 식별자의 신규 보고 발견');
     }
     if(hashes.get(`${g.id}|${g.narrativeVersion}`)!==g.narrativeFingerprint)reasons.push('검수에 사용한 사고 경위 버전 변경 또는 누락');
-    if(reasons.length){invalidReviews.push({id:g.id,reasons});for(const id of g.members){const raw=latest.get(id);if(raw)pending.push(normalize(raw,{...g,decision:'pending',reason:reasons.join('; ')},raw,rawSource));}continue;}
+    if(reasons.length){invalidReviews.push({id:g.id,reasons});for(const id of g.members){const raw=latest.get(id);if(raw)pending.push(normalize(raw,{...g,decision:'pending',reason:reasons.join('; ')},raw,rawSource,sourceMeta));}continue;}
     const raw=latest.get(g.id),evidence=versions.get(`${g.id}|${g.narrativeVersion}`);
-    records.push(normalize(raw,g,evidence,rawSource));
+    records.push(normalize(raw,g,evidence,rawSource,sourceMeta));
   }
-  for(const [id,raw] of newRows){covered.add(id);pending.push(normalize(raw,{id,members:[id],decision:'pending',reason:'기존 검수표에 없는 신규 보고',narrativeVersion:raw['Report Version']},raw,rawSource));}
+  for(const [id,raw] of newRows){covered.add(id);pending.push(normalize(raw,{id,members:[id],decision:'pending',reason:'기존 검수표에 없는 신규 보고',narrativeVersion:raw['Report Version']},raw,rawSource,sourceMeta));}
   const ads=records.filter(r=>r.system==='ADS'),impact=ads.filter(r=>r.decision==='include');
-  const model={pkg,sources,latest,versions,records,ads,impact,pending,invalidReviews,covered,rawCount,compliance,rawSource};
+  const model={pkg,sources,latest,versions,records,ads,impact,pending,invalidReviews,covered,rawCount,compliance,rawSource,sourceMeta};
   const baselineHashes=pkg.baselineHashes||Object.fromEntries(pkg.sources.map(s=>[s.era,s.sha256]));
   model.baseline=sources.length===Object.keys(baselineHashes).length && sources.every(s=>baselineHashes[s.era]===s.sha256) && pending.length===0;
   return model;
 }
-function normalize(raw,g,evidence,sourceNames){
-  const id=value(raw,'Report ID');
-  return {id,raw,evidenceRaw:evidence,narrative:value(evidence,'Narrative'),members:g.members,
+function normalize(raw,g,evidence,sourceNames,sourceMeta){
+  const id=value(raw,'Report ID'),meta=sourceMeta?.get(`${id}|${raw['Report Version']}`);
+  return {id,raw,schema:meta?.era||'',sourceFields:meta?.headers||[],evidenceRaw:evidence,narrative:value(evidence,'Narrative'),members:g.members,
     version:value(raw,'Report Version'),narrativeVersion:String(g.narrativeVersion),
     source:sourceNames.get(`${id}|${raw['Report Version']}`),system:value(raw,'Automation System Engaged?').split(',')[0],
     decision:g.decision,reason:g.reason,method:g.method||'',scenario:g.scenario||'',month:parseMonth(raw['Incident Date']),
