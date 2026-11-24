@@ -1,4 +1,4 @@
-import {pct} from './analysis.mjs?v=20261124.20';
+import {pct} from './analysis.mjs?v=20261124.30';
 export function figureInsight(f){
  const item=k=>f.items?.find(x=>x.key===k),n=f.denominator||0;
  if(f.kind==='case')return `${f.record.id}: ${f.case.summary}`;
@@ -11,6 +11,7 @@ export function figureInsight(f){
  if(f.kind==='grouped')return f.groups.map(g=>{const h=g.items.filter(x=>['serious','fatal'].includes(x.key)).reduce((s,x)=>s+x.count,0);return `${g.label}: 중상·사망 ${h}/${g.total}건`;}).join(' · ')+'. 집단 간 운행조건 차이를 보정한 위험도 비교는 아닙니다.';
  if(f.id==='vru-high-severity'){const sum=f.rows.reduce((s,r)=>s+Number(r[4]),0);return `중상·사망 ${sum}건의 상대 유형을 분리했습니다. 유형별 전체 건수가 작아 한두 건이 비율에 크게 영향을 줄 수 있습니다.`;}
  if(f.id==='vru-night-severity'){const r=f.rows.find(x=>x[0]==='야간·교차로');return `야간·교차로 ${r[1]}건 중 중상·사망 ${r[2]}건 (${r[3]}). 같은 시간·장소 조건에서 어떤 상대와 충돌했는지 사례 경위로 확인합니다.`;}
+ if(f.id==='place-by-year'){const last=f.rows.at(-1);return last?`${last[0]}년 ${last[1]}건 중 장소 미상 신고 ${last[7]}건, 미기재 ${last[8]}건, 양식에 항목 없음 ${last[9]}건입니다. 기재된 일반도로·주차장 등을 미상으로 묶지 않습니다.`:'선택 범위 자료가 없습니다.';}
  if(f.id==='environment-coverage'){const r=f.rows.at(-1);return r?`${r[0]}년 조명값 기재 ${r[3]}건, 양식에 열 없음 ${r[4]}건. 조명 항목의 부재를 실제 미상으로 집계하면 발생환경을 잘못 읽게 됩니다.`:'선택 범위 자료가 없습니다.';}
  if(f.id==='severe-composition')return `선택 범위의 중상·사망 ${f.rows.reduce((s,r)=>s+Number(r[3]),0)}건을 상대별로 확인합니다. 최초 충돌과 후속 접촉, 실제 부상 당사자는 별도 원문 검토로 구분했습니다.`;
  if(f.id==='vru-movement')return '같은 취약도로이용자라도 ADS가 직진할 때와 회전·정지할 때 접촉 장면이 다릅니다. 아래 교차표는 어떤 행동 조합을 사례로 살펴볼지 보여줍니다.';

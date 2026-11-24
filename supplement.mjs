@@ -1,12 +1,13 @@
-import {analysisRows,analysisBasis} from './analysis.mjs?v=20261124.20';
-import {figureInsight} from './figure-insights.mjs?v=20261124.20';
-import {contributionFigures} from './contribution.mjs?v=20261124.20';
+import {placeSummary,placeGroup,placeAnnual} from './environment.mjs?v=20261124.30';
+import {analysisRows,analysisBasis} from './analysis.mjs?v=20261124.30';
+import {figureInsight} from './figure-insights.mjs?v=20261124.30';
+import {contributionFigures} from './contribution.mjs?v=20261124.30';
 /* Additional evidence-based summaries. The original dataset/reviews are unchanged. */
-import {value,countBy,contactCounts,CAR,VRU,MOVEMENT,movementGroup,SEVERITY,DRIVER,LIGHTING,SCENARIOS,aggregate,filtered,pct} from './analysis.mjs?v=20261124.20';
+import {value,countBy,contactCounts,CAR,VRU,MOVEMENT,movementGroup,SEVERITY,DRIVER,LIGHTING,SCENARIOS,aggregate,filtered,pct} from './analysis.mjs?v=20261124.30';
 
-import {extendedFigures,controlSummary,controlEvidence} from './extended.mjs?v=20261124.20';
+import {extendedFigures,controlSummary,controlEvidence} from './extended.mjs?v=20261124.30';
 import {TIMING_CONTROL} from './review-data.mjs?v=20261124.10';
-import {environmentSummary,ROADWAY} from './environment.mjs?v=20261124.20';
+import {environmentSummary,ROADWAY} from './environment.mjs?v=20261124.30';
 export const TIMING_REVIEW=TIMING_CONTROL.records;
 const norm=s=>String(s||'').replace(/\s+/g,' ').trim();
 export function timingEvidence(r){
@@ -54,7 +55,7 @@ export function figureCatalog(model,filter={}) {
  chart('counterparts','overview','충돌대상별 사고 구성',a.counterparts,n,`분모: ${analysisBasis(filter).label}. 차량별 사고보고 기준.`),
  chart('car-situations','overview','자동차 상대 8가지 대표 상황',a.scenarios,a.cars.length,'정지·주행 후미추돌을 구분. 그 외와 상황 분류 미검토를 포함한 합계가 분모와 일치. 기존 분류가 없는 보고는 임의로 분류하지 않음.'),
  chart('contact-pattern','overview','ADS 차량의 접촉부위 구성',countBy(rows,contactPattern,Object.keys(CONTACT_PATTERN)).map(x=>({...x,label:CONTACT_PATTERN[x.key]})),n,'한 사고를 한 범주에 분류. 접촉부위는 충돌 방향·가해 여부와 다름. 접촉·긁힘은 별도 사고형태로 자동 추정하지 않음.'),
- chart('roadway','overview','사고 발생 장소',a.roadway.map(x=>({...x,label:ROADWAY[x.key]||x.key||'미기재'})),n),
+ chart('roadway','overview','사고 발생 장소',placeSummary(rows).counts,n,'Roadway Type의 실제 유형별 집계. 미상 신고·미기재·양식에 항목 없음은 일반도로·주차장 등 기재된 장소와 분리.'),
  chart('day-night','overview','신고 시각에 따른 주·야간',a.time.map(x=>({...x,label:({day:'주간',night:'야간',unknown:'시간 불명'})[x.key]})),n,'주간 06:00–17:59 / 야간 18:00–05:59. 실제 밝기·일출·일몰 기준과 구분.'),
  chart('lighting','overview','기재된 조명 상태',a.lighting.map(x=>({...x,label:LIGHTING[x.key]})),a.lighting.reduce((s,x)=>s+x.count,0),'Lighting 기재·유효값만 분모. 주야간으로 결측치를 채우지 않음.'),
  chart('road-surface','overview','기재된 노면 상태',surf.counts,surf.available.length,`Roadway Surface 값이 있는 사고만 집계. 양식에 열 없음 ${env.coverage.surface.find(x=>x.key==='not_collected').count}건. 다른 양식의 습윤 체크 ${surf.wetFlagOnly}건은 이 분모에 합산하지 않음.`),
@@ -64,7 +65,7 @@ export function figureCatalog(model,filter={}) {
  {id:'state-severity',tab:'status',title:'운행상태별 피해수준',kind:'grouped',groups:[['ADS 운행 확인',ads.filter(r=>r.decision==='include')],['수동·원격 운행 등',ads.filter(r=>r.decision==='non_ads')],['상태 불충분·불일치',ads.filter(r=>['insufficient','conflict'].includes(r.decision))]].map(([label,rs])=>({label,total:rs.length,items:sev(rs)})),note:'각 상태 안에서의 구성비. 운행거리·노출량을 보정한 위험도 비교가 아님.'},
  chart('vru-types','vru','취약도로이용자 유형별 사고',countBy(vru,r=>VRU.get(r.counterpart),[...VRU.values()]),vru.length,'이륜차와 스쿠터·스케이트보드를 구분. 기타 비자동차 이용자는 별도.'),
  table('vru-movement','vru','취약도로이용자 유형과 ADS 행동',['상대',...cols],[...VRU.values()].map(v=>[v,...cols.map(m=>vru.filter(r=>VRU.get(r.counterpart)===v&&movementGroup(r)===m).length)]),'SV Pre-Crash Movement 기준. 정지·주차를 정지 시작 행동으로 해석하지 않음.'),
- table('vru-environment','vru','취약도로이용자 사고의 시간·장소',['시간','교차로','그 외·불명'],[['day','주간'],['night','야간'],['unknown','시간 불명']].map(([k,label])=>[label,vru.filter(r=>r.time===k&&r.roadway==='Intersection').length,vru.filter(r=>r.time===k&&r.roadway!=='Intersection').length]),'주간 06:00–17:59 / 야간 18:00–05:59.'),
+ table('vru-environment','vru','취약도로이용자 사고의 시간·장소',['시간','교차로','그 외 명시 장소','장소 미상·미기재'],[['day','주간'],['night','야간'],['unknown','시간 불명']].map(([k,label])=>[label,vru.filter(r=>r.time===k&&r.roadway==='Intersection').length,vru.filter(r=>r.time===k&&placeGroup(r)==='other_known').length,vru.filter(r=>r.time===k&&placeGroup(r)==='unavailable').length]),'주간 06:00–17:59 / 야간 18:00–05:59.'),
  chart('vru-contact','vru','취약도로이용자 사고의 ADS 접촉부위',contactCounts(vru),vru.length,'복수 부위 기재 가능. 합계가 사고 건수를 초과할 수 있음.'),
  chart('vru-severity','vru','취약도로이용자 사고의 피해수준',sev(vru),vru.length,'최고 피해수준 기준. Moderate를 중상에 포함하지 않음.'),
  chart('domestic-years','domestic','국내 자율주행차 사고 신고 추이',model.pkg.domestic.annual.map(x=>({label:x.year,count:x.count})),null,'한국교통안전공단 공식 발표. 2025년은 1–9월이며 이전 연도는 연간 집계.'),
@@ -73,7 +74,7 @@ export function figureCatalog(model,filter={}) {
  ];
  const byId=new Map(rows.map(r=>[r.id,r]));
  for(const c of model.pkg.cases)if(byId.has(c.id)){const r=byId.get(c.id);figs.push({id:'case-'+r.id,tab:'cases',kind:'case',title:c.category,record:r,case:c,note:`보고 ${r.id} / 경위 v${r.narrativeVersion}. 원문을 요약한 개략도이며 법적 과실 판정이 아님.`});}
- return [...figs,...extendedFigures(model,filter),...contributionFigures(rows)].map(f=>({...f,basis:f.tab==='domestic'?'domestic':analysisBasis(filter).key,basisLabel:f.tab==='domestic'?'국내 공식 발표자료':analysisBasis(filter).label,insight:figureInsight(f)}));
+ return [...figs,table('place-by-year','overview','연도별 사고 발생 장소',['연도','전체','일반도로','교차로','주차장','고속도로','기타 명시','미상 신고','미기재','양식 없음'],placeAnnual(rows),'Roadway Type 기준. 기타 명시 장소는 회전교차로·주차건물·비포장도로 등이며 미상과 구분.'),...extendedFigures(model,filter),...contributionFigures(rows)].map(f=>({...f,dense:f.dense||f.id==='place-by-year',basis:f.tab==='domestic'?'domestic':analysisBasis(filter).key,basisLabel:f.tab==='domestic'?'국내 공식 발표자료':analysisBasis(filter).label,insight:figureInsight(f)}));
 }
 function figureDataRowsCore(f) {
  if(f.kind==='bar')return f.items.map(x=>({항목:x.label||x.key,건수:x.count,분모:f.denominator??'',구성비:f.denominator==null?'':pct(x.count,f.denominator),기준:f.note}));

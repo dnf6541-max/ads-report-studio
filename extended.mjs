@@ -1,7 +1,8 @@
-import {analysisRows,analysisBasis} from './analysis.mjs?v=20261124.20';
+import {placeGroup} from './environment.mjs?v=20261124.30';
+import {analysisRows,analysisBasis} from './analysis.mjs?v=20261124.30';
 /* Shared insight and evidence calculations for HTML, CSV and native PPTX. */
-import {CAR,VRU,COUNTERPART,SEVERITY,SCENARIOS,value,countBy,pct,aggregate,filtered} from './analysis.mjs?v=20261124.20';
-import {environmentSummary,environmentAudit,ROADWAY,COVERAGE} from './environment.mjs?v=20261124.20';
+import {CAR,VRU,COUNTERPART,SEVERITY,SCENARIOS,value,countBy,pct,aggregate,filtered} from './analysis.mjs?v=20261124.30';
+import {environmentSummary,environmentAudit,ROADWAY,COVERAGE} from './environment.mjs?v=20261124.30';
 import {CONTROL_REVIEW,CASE_REVIEW,COLLISION_REVIEW} from './review-data.mjs?v=20261124.10';
 export const CONTROL={on_board_transition:'차내 수동전환 확인',remote_direct:'원격 직접 제어 확인',manual_ongoing:'수동운행 · 전환 시점 불명',disengaged_stationary:'ADS 해제 후 정지',control_unclear:'해제·개입만 확인',unreviewed:'세부 검토 필요'};
 export const REASONS={external_traffic_hazard:'다른 이용자·장애물 대응',ads_behavior_system_issue:'ADS 행동·시스템 관련',odd_boundary:'ODD 이탈',planned_operational_manual_maneuver:'계획된 수동 조작',other_stated:'그 외 명시된 사유',not_specified:'전환 사유 미명시'};
@@ -45,7 +46,7 @@ export function extendedFigures(model,filter={}){
  const rows=analysisRows(model,filter),ads=rows,a=aggregate(rows),c=controlSummary(ads),e=environmentSummary(rows),h=severeSummary(rows),v=a.vru;
  const sev=rs=>countBy(rs,'severity',Object.keys(SEVERITY)).map(x=>({...x,label:SEVERITY[x.key]}));
  const vtable=[...VRU].map(([key,label])=>{const rs=v.filter(r=>r.counterpart===key);return [label,rs.length,rs.filter(r=>r.severity==='serious').length,rs.filter(r=>r.severity==='fatal').length,rs.filter(isHigh).length,`${pct(rs.filter(isHigh).length,rs.length)}%`];});
- const ni=[['주간·교차로',r=>r.time==='day'&&r.roadway==='Intersection'],['야간·교차로',r=>r.time==='night'&&r.roadway==='Intersection'],['주간·그 외 장소',r=>r.time==='day'&&r.roadway!=='Intersection'],['야간·그 외 장소',r=>r.time==='night'&&r.roadway!=='Intersection'],['시간 불명',r=>r.time==='unknown']].map(([label,fn])=>{const rs=v.filter(fn);return [label,rs.length,rs.filter(isHigh).length,`${pct(rs.filter(isHigh).length,rs.length)}%`];});
+ const ni=[['주간·교차로',r=>r.time==='day'&&r.roadway==='Intersection'],['야간·교차로',r=>r.time==='night'&&r.roadway==='Intersection'],['주간·그 외 장소',r=>r.time==='day'&&placeGroup(r)==='other_known'],['야간·그 외 장소',r=>r.time==='night'&&placeGroup(r)==='other_known'],['주간·장소 미상·미기재',r=>r.time==='day'&&placeGroup(r)==='unavailable'],['야간·장소 미상·미기재',r=>r.time==='night'&&placeGroup(r)==='unavailable'],['시간 불명',r=>r.time==='unknown']].map(([label,fn])=>{const rs=v.filter(fn);return [label,rs.length,rs.filter(isHigh).length,`${pct(rs.filter(isHigh).length,rs.length)}%`];});
  const confirmed=rows.filter(r=>r.decision==='include'),proxy=confirmed.filter(r=>r.driver==='None');
  return [
  bar('collision-form','overview','경위에서 확인한 자동차 충돌 형태',Object.keys(FORMS).map(key=>({key,label:FORMS[key],count:a.cars.filter(r=>(collisionEvidence(r)?.form||'unreviewed')===key).length})),a.cars.length,'사고 경위의 상대 진로·접촉 순서로 보수적으로 분류. 접촉부위나 8가지 상황을 그대로 치환하지 않음. 기타에는 복합충돌·규칙 미일치·정보부족 포함. 추가된 보고 중 검토 기록이 없는 것은 충돌 형태 미검토로 구분.'),
@@ -60,7 +61,7 @@ export function extendedFigures(model,filter={}){
  bar('takeover-reasons','status','차내 수동전환 계기 · 원문 명시 기준',c.reasons,c.manual.length,'차내 수동전환이 명시된 사고가 분모. 원문에 전환 이유가 연결된 경우만 분류. 복수 사유 가능하며, 사고의 원인·결함 판정과 다름.'),
  {id:'operator-severity',tab:'status',kind:'grouped',title:'ADS·운영 형태·전환별 피해수준',groups:[['사고 당시 ADS 운행',confirmed],['ADS 운행 + DDT 담당자 None',proxy],['차내 수동전환 확인',c.manual],['원격 직접 제어 확인',c.remote]].map(([label,rs])=>({label,total:rs.length,items:sev(rs)})),note:'None은 운전업무 담당자 없음이며 물리적 무인·승객 없음의 확정값 아님. 두 번째 집단은 첫 번째에 포함. 각 집단의 보고 구성비이며 위험도 비교가 아님.'},
  table('vru-high-severity','vru','취약도로이용자 유형별 중상·사망',['상대','전체','중상','사망','중상·사망','해당 유형 내 비율'],vtable,'최고 피해수준 기준. 사고 상대와 실제 최고 피해자가 같은지 원문으로 별도 확인.',{dense:true}),
- table('vru-night-severity','vru','주·야간 × 교차로 × 중상·사망',['시간·장소','전체','중상·사망','해당 조건 내 비율'],ni,'주간 06:00–17:59. 그 외 장소에는 교차로 이외 및 장소 불명이 포함. 야간은 시간 구분으로 실제 조명 상태와 다름.'),
+ table('vru-night-severity','vru','주·야간 × 교차로 × 중상·사망',['시간·장소','전체','중상·사망','해당 조건 내 비율'],ni,'주간 06:00–17:59. 그 외 장소는 교차로 이외의 명시된 장소만 포함. 장소 미상·미기재는 별도 표시. 야간은 시간 구분으로 실제 조명 상태와 다름.'),
  ];
 }
 export function extendedAudit(model,rows=model.impact,ads=model.ads){

@@ -4,11 +4,11 @@ import zlib from 'node:zlib';
 import PptxGenJS from 'pptxgenjs';
 import JSZip from 'jszip';
 import encoded from './data-base64.mjs?v=20261124.10';
-import {buildModel,analysisRows,analysisBasis,aggregate,audit,sample,CAR,VRU,scenarioKey,csvExport,parseCSV} from './analysis.mjs?v=20261124.20';
-import {figureCatalog,figureDataRows,extraAudit} from './supplement.mjs?v=20261124.20';
-import {extendedAudit,insightSummary,controlSummary} from './extended.mjs?v=20261124.20';
-import {contributionAudit,contributionSummary} from './contribution.mjs?v=20261124.20';
-import {buildPptx} from './export-pptx.mjs?v=20261124.20';
+import {buildModel,analysisRows,analysisBasis,aggregate,audit,sample,CAR,VRU,scenarioKey,csvExport,parseCSV} from './analysis.mjs?v=20261124.30';
+import {figureCatalog,figureDataRows,extraAudit} from './supplement.mjs?v=20261124.30';
+import {extendedAudit,insightSummary,controlSummary} from './extended.mjs?v=20261124.30';
+import {contributionAudit,contributionSummary} from './contribution.mjs?v=20261124.30';
+import {buildPptx} from './export-pptx.mjs?v=20261124.30';
 const pkg=JSON.parse(zlib.gunzipSync(Buffer.from(encoded,'base64'))),m=await buildModel(pkg);
 const catalog=basis=>figureCatalog(m,{basis});
 const fig=(list,id)=>list.find(f=>f.id===id);
@@ -45,7 +45,7 @@ test('the additional 202 car reports stay unreviewed instead of becoming other o
 });
 test('all figures, status comparisons, insights and CSV metadata follow the selected basis',()=>{
  for(const [basis,n,cars,vru,surface]of [['reported',3031,2489,103,1480],['confirmed',2752,2287,87,1296]]){
-  const fs=catalog(basis),rows=analysisRows(m,{basis});assert.equal(fs.length,49);
+  const fs=catalog(basis),rows=analysisRows(m,{basis});assert.equal(fs.length,56);
   for(const [id,total]of [['counterparts',n],['car-situations',cars],['collision-form',cars],['day-night',n],['operating-state',n],['operator',n],['road-surface',surface],['vru-types',vru]]){
    const f=fig(fs,id);assert.equal(f.denominator,total,id);assert.equal(f.items.reduce((s,x)=>s+x.count,0),total,id);
    const csv=parseCSV(csvExport(figureDataRows(f)));assert.ok(csv.rows.every(x=>x['분석기준']===analysisBasis({basis}).label));
@@ -57,7 +57,7 @@ test('all figures, status comparisons, insights and CSV metadata follow the sele
   assert.ok(insightSummary(m,{basis},'cases').items[0][1].includes(`${n}건`));
   assert.ok(fs.every(f=>f.insight&&f.basis===(f.tab==='domestic'?'domestic':basis)));
   const checks=[...audit(m,rows),...extraAudit(m,rows,rows),...extendedAudit(m,rows,rows),...contributionAudit(m,rows)];
-  assert.equal(checks.length,55);assert.ok(checks.every(x=>x.ok),JSON.stringify(checks.filter(x=>!x.ok)));
+  assert.equal(checks.length,58);assert.ok(checks.every(x=>x.ok),JSON.stringify(checks.filter(x=>!x.ok)));
   assert.ok(sample(rows,20).every(r=>rows.includes(r)));assert.equal(contributionSummary(rows).details.length,134);
  }
  const a=catalog('reported'),b=catalog('confirmed');assert.deepEqual(a.filter(f=>f.tab==='domestic'),b.filter(f=>f.tab==='domestic'));

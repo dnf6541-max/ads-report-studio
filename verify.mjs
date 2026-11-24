@@ -3,8 +3,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import zlib from 'node:zlib';
-import {buildModel,audit,aggregate,dayNight,parseCSV,parseMonth,severity,filtered,sample,pct,contactCounts,selectFields,sha256,canonical,VRU} from './analysis.mjs?v=20261124.20';
-import {surfaceSummary,contactPattern,transitionSummary,timingEvidence,TIMING_REVIEW,figureCatalog,figureDataRows,extraAudit} from './supplement.mjs?v=20261124.20';
+import {buildModel,audit,aggregate,dayNight,parseCSV,parseMonth,severity,filtered,sample,pct,contactCounts,selectFields,sha256,canonical,VRU} from './analysis.mjs?v=20261124.30';
+import {surfaceSummary,contactPattern,transitionSummary,timingEvidence,TIMING_REVIEW,figureCatalog,figureDataRows,extraAudit} from './supplement.mjs?v=20261124.30';
 const encoded=(await import('./data-base64.mjs?v=20261124.10')).default;
 const pkg=JSON.parse(zlib.gunzipSync(Buffer.from(encoded,'base64')));
 const model=await buildModel(pkg);
@@ -114,8 +114,8 @@ test('16 confirmed on-board timing intervals exclude disengagement-only and manu
   const lower=t.known.filter(x=>x.t.kind==='lower');assert.equal(lower.length,2);assert.ok(lower.every(x=>x.t.bucket==='over5'));
 });
 test('figure exports use the same filters, denominators and actual data',()=>{
-  const figures=figureCatalog(model);assert.equal(figures.length,49);assert.equal(new Set(figures.map(x=>x.id)).size,49);
-  assert.equal(figures.filter(x=>x.kind==='case').length,14);
+  const figures=figureCatalog(model);assert.equal(figures.length,56);assert.equal(new Set(figures.map(x=>x.id)).size,56);
+  assert.equal(figures.filter(x=>x.kind==='case'&&x.tab==='cases').length,14);
   for(const id of ['counterparts','car-situations','contact-pattern','roadway','day-night','lighting','road-surface','operating-state','operator','transition-time','vru-types','vru-severity']){
     const f=figures.find(x=>x.id===id);assert.equal(f.items.reduce((n,x)=>n+x.count,0),f.denominator,id);
     assert.equal(figureDataRows(f).reduce((n,x)=>n+x.건수,0),f.denominator,id);
