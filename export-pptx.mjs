@@ -7,7 +7,7 @@ import {contributionSummary,contributionInsights,compactContributionItems} from 
 import {sceneFor,locationInfo} from './scenes.mjs?v=20261125.25';
 /* Editable PowerPoint export. Native charts include their Excel workbooks. */
 import {aggregate,filtered,pct,SEVERITY,CAR,VRU,countBy} from './analysis.mjs?v=20261125.25';
-import {figureCatalog,figureDataRows,transitionSummary,surfaceSummary} from './supplement.mjs?v=20261125.25';
+import {figureCatalog,figureDataRows,transitionSummary,surfaceSummary} from './supplement.mjs?v=20261125.26';
 
 import {insightSummary} from './extended.mjs?v=20261125.25';
 const C={navy:'193D50',teal:'148B82',blue:'277EAE',sky:'5AAAC8',amber:'D58A3B',muted:'637D8B',line:'D7E2E8',wash:'F3F7F9',grey:'83949E',white:'FFFFFF'};

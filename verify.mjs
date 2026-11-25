@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import zlib from 'node:zlib';
 import {buildModel,audit,aggregate,dayNight,parseCSV,parseMonth,severity,filtered,sample,pct,contactCounts,selectFields,sha256,canonical,VRU} from './analysis.mjs?v=20261125.25';
-import {surfaceSummary,contactPattern,transitionSummary,timingEvidence,TIMING_REVIEW,figureCatalog,figureDataRows,extraAudit} from './supplement.mjs?v=20261125.25';
+import {surfaceSummary,contactPattern,transitionSummary,timingEvidence,TIMING_REVIEW,figureCatalog,figureDataRows,extraAudit} from './supplement.mjs?v=20261125.26';
 const encoded=(await import('./data-base64.mjs?v=20261124.10')).default;
 const pkg=JSON.parse(zlib.gunzipSync(Buffer.from(encoded,'base64')));
 const model=await buildModel(pkg);

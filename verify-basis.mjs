@@ -6,7 +6,7 @@ import PptxGenJS from 'pptxgenjs';
 import JSZip from 'jszip';
 import encoded from './data-base64.mjs?v=20261124.10';
 import {buildModel,analysisRows,analysisBasis,aggregate,audit,sample,CAR,VRU,scenarioKey,csvExport,parseCSV} from './analysis.mjs?v=20261125.25';
-import {figureCatalog,figureDataRows,extraAudit} from './supplement.mjs?v=20261125.25';
+import {figureCatalog,figureDataRows,extraAudit} from './supplement.mjs?v=20261125.26';
 import {extendedAudit,insightSummary,controlSummary} from './extended.mjs?v=20261125.25';
 import {contributionAudit,contributionSummary} from './contribution.mjs?v=20261125.25';
 import {buildPptx} from './export-pptx.mjs?v=20261125.25';

@@ -3,7 +3,7 @@ import encoded from './data-base64.mjs';import review from './scenario-data.mjs?
 import {buildModel,analysisRows,aggregate,scenarioKey,CAR,sample,DRIVER,canonical,sha256} from './analysis.mjs?v=20261125.25';
 import {scenarioEvidence,scenarioClassification,scenarioReviewAudit,contactAreas} from './scenario-review.mjs?v=20261125.25';
 import {contributionSummary,contributionFigures,contributionAudit,compactContributionItems} from './contribution.mjs?v=20261125.25';
-import {figureCatalog} from './supplement.mjs?v=20261125.25';import {sceneFor,sceneSVG} from './scenes.mjs?v=20261125.25';import{buildPptx}from'./export-pptx.mjs?v=20261125.25';
+import {figureCatalog} from './supplement.mjs?v=20261125.26';import {sceneFor,sceneSVG} from './scenes.mjs?v=20261125.25';import{buildPptx}from'./export-pptx.mjs?v=20261125.25';
 const pkg=JSON.parse(zlib.gunzipSync(Buffer.from(encoded,'base64'))),m=await buildModel(pkg),cars=m.ads.filter(r=>CAR.has(r.counterpart));
 const zip=async p=>JSZip.loadAsync(await p.write({outputType:'uint8array',compression:true}));const slides=z=>Object.keys(z.files).filter(k=>/^ppt\/slides\/slide\d+\.xml$/.test(k));
 test('all 2489 automobile narratives are version-bound reviewed, including202 non-impact-confirmed reports',()=>{

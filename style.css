@@ -89,3 +89,5 @@
 .dialog-content .analysis-hypotheses{grid-template-columns:repeat(2,minmax(0,1fr))}.dialog-content .analysis-improvements{grid-template-columns:repeat(3,minmax(0,1fr))}
 @media(max-width:700px){.dialog-content .analysis-hypotheses,.dialog-content .analysis-improvements{grid-template-columns:1fr}}
 .figure-sheet .analysis-figure .case-copy h4{font-size:20px;margin:11px 0 8px}.figure-sheet .analysis-figure .case-copy p{font-size:17px;line-height:1.5}.figure-sheet .analysis-figure .analysis-export-note{font-size:13px;color:#637d8b;margin-top:13px}.figure-sheet .analysis-figure .case-diagram svg{height:auto;margin-top:15px}
+
+#approval-form{display:grid;gap:14px}#approval-form label{display:grid;gap:6px}#approval-form textarea{width:100%;font:inherit;padding:10px;border:1px solid #b8cbd3;border-radius:6px}#approval-error{color:#9b2929}

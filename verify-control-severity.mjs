@@ -6,7 +6,7 @@ import JSZip from 'jszip';
 import encoded from './data-base64.mjs?v=20261124.10';
 import {buildModel,analysisRows,SEVERITY,pct} from './analysis.mjs?v=20261125.25';
 import {operatingStateSummary,controlEvidence} from './extended.mjs?v=20261125.25';
-import {figureCatalog,figureDataRows} from './supplement.mjs?v=20261125.25';
+import {figureCatalog,figureDataRows} from './supplement.mjs?v=20261125.26';
 import {buildPptx} from './export-pptx.mjs?v=20261125.25';
 
 const model=await buildModel(JSON.parse(zlib.gunzipSync(Buffer.from(encoded,'base64'))));

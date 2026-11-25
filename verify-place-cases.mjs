@@ -7,7 +7,7 @@ import JSZip from 'jszip';
 import encoded from './data-base64.mjs?v=20261124.10';
 import {buildModel,analysisRows} from './analysis.mjs?v=20261125.25';
 import {placeSummary,placeAnnual,placeGroup,placeKey,placeStatus} from './environment.mjs?v=20261125.25';
-import {figureCatalog,figureDataRows} from './supplement.mjs?v=20261125.25';
+import {figureCatalog,figureDataRows} from './supplement.mjs?v=20261125.26';
 import {sceneFor,sceneSVG,caseSceneIds} from './scenes.mjs?v=20261125.25';
 import {caseGalleryMarkup} from './case-gallery.mjs?v=20261125.25';
 import {buildPptx} from './export-pptx.mjs?v=20261125.25';

@@ -19,7 +19,7 @@ export function timingEvidence(r){
 }
 export function transitionSummary(rows){
  const base=controlSummary(rows).manual,details=base.map(r=>({r,t:timingEvidence(r)})).filter(x=>x.t),known=details.filter(x=>['within5','over5'].includes(x.t.bucket));
- return {base,details,known,counts:[{key:'within5',label:'5초 이내 · 약 표현 포함',count:known.filter(x=>x.t.bucket==='within5').length},{key:'over5',label:'5초 초과 · 하한 포함',count:known.filter(x=>x.t.bucket==='over5').length},{key:'unknown',label:'시차 구분 미확인',count:base.length-known.length}]};
+ return {base,details,known,counts:[{key:'within5',label:'수동전환 후 5초 이내 충돌 · 보고값',count:known.filter(x=>x.t.bucket==='within5').length},{key:'over5',label:'수동전환 후 5초 초과 충돌 · 하한 포함',count:known.filter(x=>x.t.bucket==='over5').length},{key:'unknown',label:'시차 구분 미확인',count:base.length-known.length}]};
 }
 export const SURFACE={Dry:'건조',Wet:'젖음','Snow / Slush / Ice':'눈·진창·얼음','Other, see Narrative':'기타 노면'};
 export function surfaceSummary(rows) {
