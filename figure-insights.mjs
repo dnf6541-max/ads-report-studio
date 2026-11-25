@@ -1,4 +1,4 @@
-import {pct} from './analysis.mjs?v=20261125.24';
+import {pct} from './analysis.mjs?v=20261125.25';
 export function figureInsight(f){
  const item=k=>f.items?.find(x=>x.key===k),n=f.denominator||0;
  if(f.kind==='case'&&f.analysis)return `${f.record.id}: ${f.analysis.scene.stages.join(' → ')} · 원문 기반 검토 초안`;

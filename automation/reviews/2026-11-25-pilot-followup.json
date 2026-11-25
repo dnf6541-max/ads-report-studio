@@ -1,0 +1,37 @@
+{
+  "runId": "45532992376",
+  "reviewedAt": "2026-11-25",
+  "accepted": 0,
+  "held": 10,
+  "pendingReportIDs": 196,
+  "addedReportIDs": 194,
+  "changedReportIDs": 2,
+  "apiCalls": 10,
+  "conservativeUSD": 3.83999,
+  "connectionConservativeUSD": 0.00248,
+  "checks": {
+    "runAggregation": 18,
+    "currentPackage": 68,
+    "failed": 0
+  },
+  "sourceReview": "All ten held source Narratives and bilateral contact flags were read; compare pilot-source-review.json. No accepted analyses exist, so accepted-output random sampling was not applicable.",
+  "limitations": [
+    "The original run did not persist rejected drafts. Exact rejected quotations cannot be reconstructed; do not claim all rejection causes were corrected.",
+    "All ten failed the first deterministic gate; no second-pass calls were made.",
+    "Code adds explicit literal-quotation instructions and rejected-draft diagnostics for future executions. No paid rerun was performed."
+  ],
+  "counts": {
+    "reported": 3029,
+    "confirmed": 2750,
+    "pending": 196
+  },
+  "countExplanation": "Two changed reports lost prior review eligibility and remain pending. New and changed Report IDs must not be presented as unique crashes.",
+  "heldContacts": [
+    "13781-16733: Narrative SV right side vs raw SV Rear Left",
+    "30270-14422: Narrative CP front right vs raw CP Front Left"
+  ],
+  "injuryAttribution": [
+    "30270-16670: SUV driver, not ADS occupant; secondary streetlight contact",
+    "30270-17066: two passenger-car passengers, not ADS occupants"
+  ]
+}

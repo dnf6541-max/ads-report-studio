@@ -1,15 +1,15 @@
-import {caseAnalysisDataRow} from './case-analysis.mjs?v=20261125.24';
-import {scenarioFigures} from './scenario-viz.mjs?v=20261125.24';
-import {placeSummary,placeGroup,placeAnnual} from './environment.mjs?v=20261125.24';
-import {analysisRows,analysisBasis} from './analysis.mjs?v=20261125.24';
-import {figureInsight} from './figure-insights.mjs?v=20261125.24';
-import {contributionFigures} from './contribution.mjs?v=20261125.24';
+import {caseAnalysisDataRow,reportCases} from './case-analysis.mjs?v=20261125.25';
+import {scenarioFigures} from './scenario-viz.mjs?v=20261125.25';
+import {placeSummary,placeGroup,placeAnnual} from './environment.mjs?v=20261125.25';
+import {analysisRows,analysisBasis} from './analysis.mjs?v=20261125.25';
+import {figureInsight} from './figure-insights.mjs?v=20261125.25';
+import {contributionFigures} from './contribution.mjs?v=20261125.25';
 /* Additional evidence-based summaries. The original dataset/reviews are unchanged. */
-import {value,countBy,contactCounts,CAR,VRU,MOVEMENT,movementGroup,SEVERITY,DRIVER,LIGHTING,SCENARIOS,aggregate,filtered,pct} from './analysis.mjs?v=20261125.24';
+import {value,countBy,contactCounts,CAR,VRU,MOVEMENT,movementGroup,SEVERITY,DRIVER,LIGHTING,SCENARIOS,aggregate,filtered,pct} from './analysis.mjs?v=20261125.25';
 
-import {extendedFigures,controlSummary,controlEvidence,operatingStateSummary,OPERATING_NOTE} from './extended.mjs?v=20261125.24';
+import {extendedFigures,controlSummary,controlEvidence,operatingStateSummary,OPERATING_NOTE} from './extended.mjs?v=20261125.25';
 import {TIMING_CONTROL} from './review-data.mjs?v=20261124.10';
-import {environmentSummary,ROADWAY} from './environment.mjs?v=20261125.24';
+import {environmentSummary,ROADWAY} from './environment.mjs?v=20261125.25';
 export const TIMING_REVIEW=TIMING_CONTROL.records;
 const norm=s=>String(s||'').replace(/\s+/g,' ').trim();
 export function timingEvidence(r){
@@ -75,7 +75,7 @@ export function figureCatalog(model,filter={}) {
  {id:'domestic-speed',tab:'domestic',title:'국내 사고 발생 속도',kind:'stat',value:'30 km/h 이하',description:'사고가 주로 발생한 저속 구간에 대한 공식 발표 요약',note:'속도대별 상세 건수 미제공. 임의의 속도 분포를 만들지 않음.'},
  ];
  const byId=new Map(rows.map(r=>[r.id,r]));
- for(const c of model.pkg.cases)if(byId.has(c.id)){const r=byId.get(c.id);figs.push({id:'case-'+r.id,tab:'cases',kind:'case',title:c.category,record:r,case:c,note:`보고 ${r.id} / 경위 v${r.narrativeVersion}. 원문을 요약한 개략도이며 법적 과실 판정이 아님.`});}
+ for(const c of reportCases(rows,model.pkg.cases))if(byId.has(c.id)){const r=byId.get(c.id);figs.push({id:'case-'+r.id,tab:'cases',kind:'case',title:c.category,record:r,case:c,note:`보고 ${r.id} / 경위 v${r.narrativeVersion}. 원문을 요약한 개략도이며 법적 과실 판정이 아님.`});}
  return [...figs,...scenarioFigures(rows),table('place-by-year','overview','연도별 사고 발생 장소',['연도','전체','일반도로','교차로','주차장','고속도로','기타 명시','미상 신고','미기재','양식 없음'],placeAnnual(rows),'Roadway Type 기준. 기타 명시 장소는 회전교차로·주차건물·비포장도로 등이며 미상과 구분.'),...extendedFigures(model,filter),...contributionFigures(rows,filter)].map(f=>({...f,dense:f.dense||f.id==='place-by-year',basis:f.tab==='domestic'?'domestic':analysisBasis(filter).key,basisLabel:f.tab==='domestic'?'국내 공식 발표자료':analysisBasis(filter).label,insight:f.insight||figureInsight(f)}));
 }
 function figureDataRowsCore(f) {
