@@ -96,7 +96,7 @@ export function buildPptx(PptxGenJS,model,filter={},options={}) {
      selected.forEach((f,i)=>casePanel(s,f,.55+(i%2)*7.7,1.55+Math.floor(i/2)*3.4,7.2,3.2));
      if(!selected.length)empty(s);notes(s,selected,'그림은 원문에 기초한 개략도. 모든 사고의 자동 진로 복원 기능이 아님.');
    }else if(tab==='status'){
-     section(s,'01','사고 당시 제어 방식',.55,1.47,10.5);bar(s,byId.get('operating-state'),.55,1.98,10.5,2.08,14);
+     section(s,'01','사고 당시 제어 방식',.55,1.47,10.5);{const f=byId.get('operating-state'),max=Math.max(1,...f.items.map(x=>x.count));f.items.forEach((r,i)=>{const y=2.02+i*.4;txt(s,r.label,.65,y,3.45,.25,12,{align:'right'});rect(s,4.25,y,5.45,.25,'EEF3F5');if(r.count)rect(s,4.25,y,5.45*r.count/max,.25,palette[i%palette.length]);txt(s,`${fmt(r.count)}건 (${pct(r.count,f.denominator)}%)`,9.8,y,1.3,.25,10.5);});}
      section(s,'02','보고된 운전·운영인력 유형',.55,4.42,5.0);bar(s,byId.get('operator'),.5,4.95,5.1,2.2,10.5);
      const timing=transitionSummary(ads);rect(s,.6,7.36,4.9,.77,'EAF5F2');txt(s,`차내 전환 시차 ${timing.known.length}건 중 5초 이내 ${timing.counts[0].count}건`,.72,7.47,4.65,.25,12,{bold:true,color:C.teal});txt(s,'약 표현·하한 포함. 차내 수동전환 확인이 분모.',.72,7.85,4.65,.18,9.5,{color:C.muted});
      section(s,'03','제어 방식별 사고 심각도',5.9,4.42,5.15);const g=byId.get('state-severity');g.groups.forEach((r,i)=>{const y=4.99+i*.55;txt(s,`${r.label} · ${fmt(r.total)}건`,5.95,y,5,.19,10.5,{bold:true});stack(s,r.items,r.total,5.95,y+.21,5,.16);const high=r.items.filter(x=>['serious','fatal'].includes(x.key)).reduce((n,x)=>n+x.count,0);txt(s,`중상·사망 ${high}건 · ${r.total?pct(high,r.total)+'%':'해당 자료 없음'}`,5.95,y+.38,5,.14,8.5,{color:C.muted});});txt(s,'부상 보고 없음 / 경상 / 중등도 / 중상 / 사망 / 불명',5.95,7.81,5,.19,8.5,{color:C.muted});txt(s,'각 상태 내 구성비 · 원격은 운전·기어 조작 포함',5.95,8.07,5,.18,8.5,{color:C.muted});
