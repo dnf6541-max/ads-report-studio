@@ -1,6 +1,6 @@
-import {contactScene,contactDiagramSVG} from './contact-diagram.mjs?v=20261125.10';
+import {contactScene,contactDiagramSVG} from './contact-diagram.mjs?v=20261125.20';
 /* Editable scenario geometry. Coordinates describe the drawing, never GPS. */
-import {value,COUNTERPART} from './analysis.mjs?v=20261125.10';
+import {value,COUNTERPART} from './analysis.mjs?v=20261125.20';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const redacted=s=>!s||/\[|unknown|redact|personally|^n\/?a$/i.test(s);
 export function locationInfo(r,override={}){

@@ -1,14 +1,14 @@
-import {CONTACT_POINTS,CONTACT_LABELS} from './contact-diagram.mjs?v=20261125.10';
-import {SCENARIO_SCHEMES} from './scenario-viz.mjs?v=20261125.10';
-import {placeSummary} from './environment.mjs?v=20261125.10';
-import {analysisRows,analysisBasis} from './analysis.mjs?v=20261125.10';
-import {contributionSummary,contributionInsights,compactContributionItems} from './contribution.mjs?v=20261125.10';
-import {sceneFor,locationInfo} from './scenes.mjs?v=20261125.10';
+import {CONTACT_POINTS,CONTACT_LABELS} from './contact-diagram.mjs?v=20261125.20';
+import {SCENARIO_SCHEMES} from './scenario-viz.mjs?v=20261125.20';
+import {placeSummary} from './environment.mjs?v=20261125.20';
+import {analysisRows,analysisBasis} from './analysis.mjs?v=20261125.20';
+import {contributionSummary,contributionInsights,compactContributionItems} from './contribution.mjs?v=20261125.20';
+import {sceneFor,locationInfo} from './scenes.mjs?v=20261125.20';
 /* Editable PowerPoint export. Native charts include their Excel workbooks. */
-import {aggregate,filtered,pct,SEVERITY,CAR,VRU,countBy} from './analysis.mjs?v=20261125.10';
-import {figureCatalog,figureDataRows,transitionSummary,surfaceSummary} from './supplement.mjs?v=20261125.10';
+import {aggregate,filtered,pct,SEVERITY,CAR,VRU,countBy} from './analysis.mjs?v=20261125.20';
+import {figureCatalog,figureDataRows,transitionSummary,surfaceSummary} from './supplement.mjs?v=20261125.20';
 
-import {insightSummary} from './extended.mjs?v=20261125.10';
+import {insightSummary} from './extended.mjs?v=20261125.20';
 const C={navy:'193D50',teal:'148B82',blue:'277EAE',sky:'5AAAC8',amber:'D58A3B',muted:'637D8B',line:'D7E2E8',wash:'F3F7F9',grey:'83949E',white:'FFFFFF'};
 const palette=[C.teal,C.blue,C.sky,C.amber,C.grey,'B3C1C8'];
 const sevColor={none:C.teal,minor:'358EBC',moderate:'DF9F44',serious:'CB6A40',fatal:'AD4357',unknown:'B4BFC8'};
@@ -32,7 +32,7 @@ export function buildPptx(PptxGenJS,model,filter={},options={}) {
  function bar(s,f,x,y,w,h,fs=13) {
    if(!f||!f.items.length||!f.items.some(v=>v.count)){txt(s,'해당 자료 없음',x,y+.2,w,.4,fs,{color:C.muted});return;}
    const labels=f.items.map(d=>`${d.label||d.key}${f.denominator!=null?` (${pct(d.count,f.denominator)}%)`:''}`);
-   s.addChart(pptx.ChartType.bar,[{name:'보고 건수',labels,values:f.items.map(d=>d.count)}],{x,y,w,h,barDir:'bar',barGrouping:'clustered',barGapWidthPct:48,catAxisLabelFontFace:font,catAxisLabelFontSize:fs,catAxisLabelColor:C.navy,catAxisLineShow:false,catAxisMajorTickMark:'none',catAxisMinorTickMark:'none',catAxisLabelPos:'low',catAxisOrientation:'maxMin',valAxisHidden:true,valAxisLineShow:false,valGridLine:{style:'none'},catGridLine:{style:'none'},showLegend:false,showValue:true,dataLabelPosition:'outEnd',dataLabelFormatCode:'0"건"',dataLabelFontSize:fs-1,dataLabelColor:C.navy,showTitle:false,chartColors:palette,chartArea:{fill:{color:C.white},border:{color:C.white,pt:0}},plotArea:{fill:{color:C.white},border:{color:C.white,pt:0}},showBorder:false,showCatName:false,lang:'ko-KR',showMarker:false});
+   s.addChart(pptx.ChartType.bar,[{name:'보고 건수',labels,values:f.items.map(d=>d.count)}],{x,y,w,h,barDir:'bar',barGrouping:'clustered',barGapWidthPct:48,catAxisLabelFontFace:font,catAxisLabelFontSize:fs,catAxisLabelColor:C.navy,catAxisLineShow:false,catAxisMajorTickMark:'none',catAxisMinorTickMark:'none',catAxisLabelPos:'low',catAxisLabelFrequency:'1',catAxisOrientation:'maxMin',valAxisHidden:true,valAxisLineShow:false,valGridLine:{style:'none'},catGridLine:{style:'none'},showLegend:false,showValue:true,dataLabelPosition:'outEnd',dataLabelFormatCode:'0"건"',dataLabelFontSize:fs-1,dataLabelColor:C.navy,showTitle:false,chartColors:palette,chartArea:{fill:{color:C.white},border:{color:C.white,pt:0}},plotArea:{fill:{color:C.white},border:{color:C.white,pt:0}},showBorder:false,showCatName:false,lang:'ko-KR',showMarker:false});
  }
  function stack(s,items,total,x,y,w,h=.32,fs=10) {
    if(!total){txt(s,'자료 없음',x,y,w,h,fs,{color:C.muted});return;}
@@ -96,10 +96,10 @@ export function buildPptx(PptxGenJS,model,filter={},options={}) {
      selected.forEach((f,i)=>casePanel(s,f,.55+(i%2)*7.7,1.55+Math.floor(i/2)*3.4,7.2,3.2));
      if(!selected.length)empty(s);notes(s,selected,'그림은 원문에 기초한 개략도. 모든 사고의 자동 진로 복원 기능이 아님.');
    }else if(tab==='status'){
-     section(s,'01','사고 당시 작동상태',.55,1.47,10.5);bar(s,byId.get('operating-state'),.55,1.98,10.5,2.08,14);
+     section(s,'01','사고 당시 제어 방식',.55,1.47,10.5);bar(s,byId.get('operating-state'),.55,1.98,10.5,2.08,14);
      section(s,'02','보고된 운전·운영인력 유형',.55,4.42,5.0);bar(s,byId.get('operator'),.5,4.95,5.1,2.2,10.5);
      const timing=transitionSummary(ads);rect(s,.6,7.36,4.9,.77,'EAF5F2');txt(s,`차내 전환 시차 ${timing.known.length}건 중 5초 이내 ${timing.counts[0].count}건`,.72,7.47,4.65,.25,12,{bold:true,color:C.teal});txt(s,'약 표현·하한 포함. 차내 수동전환 확인이 분모.',.72,7.85,4.65,.18,9.5,{color:C.muted});
-     section(s,'03','운행상태별 피해수준',5.9,4.42,5.15);const g=byId.get('state-severity');g.groups.forEach((r,i)=>{const y=5.04+i*.86;txt(s,`${r.label} · ${fmt(r.total)}건`,5.95,y,5,.23,12,{bold:true});stack(s,r.items,r.total,5.95,y+.3,5,.28);const high=r.items.filter(x=>['serious','fatal'].includes(x.key)).reduce((n,x)=>n+x.count,0);txt(s,`중상·사망 ${high}건 (${pct(high,r.total)}%)`,5.95,y+.62,5,.2,10,{color:C.muted});});txt(s,'부상 보고 없음 / 경상 / 중등도 / 중상 / 사망 / 불명',5.95,7.82,5,.25,9,{color:C.muted});
+     section(s,'03','제어 방식별 사고 심각도',5.9,4.42,5.15);const g=byId.get('state-severity');g.groups.forEach((r,i)=>{const y=4.99+i*.55;txt(s,`${r.label} · ${fmt(r.total)}건`,5.95,y,5,.19,10.5,{bold:true});stack(s,r.items,r.total,5.95,y+.21,5,.16);const high=r.items.filter(x=>['serious','fatal'].includes(x.key)).reduce((n,x)=>n+x.count,0);txt(s,`중상·사망 ${high}건 · ${r.total?pct(high,r.total)+'%':'해당 자료 없음'}`,5.95,y+.38,5,.14,8.5,{color:C.muted});});txt(s,'부상 보고 없음 / 경상 / 중등도 / 중상 / 사망 / 불명',5.95,7.81,5,.19,8.5,{color:C.muted});txt(s,'각 상태 내 구성비 · 원격은 운전·기어 조작 포함',5.95,8.07,5,.18,8.5,{color:C.muted});
      {const i=insightSummary(model,filter,'status');insights(s,i.title,i.items,i.note);}notes(s,figures.filter(f=>f.tab===tab));
    }else if(tab==='vru'){
      if(!a.vru.length){empty(s);notes(s,[]);return;}
@@ -121,7 +121,7 @@ export function buildPptx(PptxGenJS,model,filter={},options={}) {
    rect(s,.65,1.48,14.7,.61,'EAF5F2');txt(s,f.insight||'',.8,1.58,14.35,.43,12.5,{color:C.teal});
    if(f.kind==='bar')bar(s,f,.65,2.24,14.7,5.37,f.items.length>9?14:19);
    else if(f.kind==='table')table(s,f,.65,2.3,14.7,Math.min(4.9,Math.max(2.4,(f.rows.length+1)*.55)),f.dense?14:18);
-   else if(f.kind==='grouped'){f.groups.forEach((g,i)=>{const gap=f.groups.length>3?1.28:1.55,y=2.25+i*gap;txt(s,`${g.label} · ${fmt(g.total)}건`,.8,y,14,.45,22,{bold:true});stack(s,g.items,g.total,.8,y+.6,14.2,.5);txt(s,g.items.filter(x=>x.count).map(x=>`${x.label} ${x.count}건 (${pct(x.count,g.total)}%)`).join(' / '),.85,y+1.05,14.1,.3,11,{color:C.muted});});}
+   else if(f.kind==='grouped'){f.groups.forEach((g,i)=>{const dense=f.groups.length>4,gap=dense?1.06:f.groups.length>3?1.28:1.55,y=2.25+i*gap;txt(s,`${g.label} · ${fmt(g.total)}건`,.8,y,14,dense?.32:.45,dense?18:22,{bold:true});stack(s,g.items,g.total,.8,y+(dense?.39:.6),14.2,dense?.3:.5);txt(s,g.total?g.items.filter(x=>x.count).map(x=>`${x.label} ${x.count}건 (${pct(x.count,g.total)}%)`).join(' / '):'선택 범위에 해당 자료 없음',.85,y+(dense?.74:1.05),14.1,.23,11,{color:C.muted});});}
    else if(f.kind==='scenario'){
     const sc=SCENARIO_SCHEMES[f.code],X=v=>1.8+v/800*12.4,Y=v=>2.3+v/340*5.27;rect(s,1.8,2.3,12.4,5.27,C.wash);rect(s,X(250),Y(0),250/800*12.4,285/340*5.27,'E0E9ED');line(s,X(375),Y(0),X(375),Y(285),'FFFFFF',2,{dash:'dash'});
     [[sc.sv,C.teal,'보고차'],[sc.cp,C.grey,'상대차']].forEach(([p,color,label])=>{s.addShape(S.roundRect,{x:X(p[0]-29),y:Y(p[1]-43),w:58/800*12.4,h:86/340*5.27,rotate:p[2],fill:{color},line:{color}});txt(s,label,X(p[0]-45),Y(p[1]-10),90/800*12.4,24/340*5.27,15,{color:C.white,bold:true,align:'center'});});
@@ -129,7 +129,7 @@ export function buildPptx(PptxGenJS,model,filter={},options={}) {
 
    else if(f.kind==='stat'){txt(s,f.value,1,2.1,14,1.5,66,{bold:true,color:C.teal,align:'center'});txt(s,f.description,2,4.1,12,1.3,29,{align:'center'});}
    else if(f.kind==='case'){nativeScene(s,f.record,.8,2.55,6.4,4.5);txt(s,`${f.record.company} · ${f.record.month} · 보고 ${f.record.id}`,7.5,1.95,7.4,.55,18,{bold:true});txt(s,'사고 상황',7.5,2.83,7.2,.4,22,{bold:true,color:C.blue});txt(s,f.case.summary,7.5,3.45,7.2,1.65,f.case.summary.length>110?18:21);txt(s,'확인할 점',7.5,5.35,7.2,.4,21,{bold:true,color:C.blue});txt(s,f.case.caution,7.5,5.95,7.2,1.25,18,{color:C.muted});}
-   txt(s,f.note||'',.8,7.95,14.4,.4,12,{color:C.muted});notes(s,[f]);
+   txt(s,f.note||'',.8,7.88,14.4,.52,f.id==='state-severity'?10.5:12,{color:C.muted});notes(s,[f]);
  }
  const scope=options.scope||'pages';
  if(scope==='figures'||scope==='cases'){const pool=scope==='cases'?figures.filter(f=>f.kind==='case'):figures;const chosen=options.figureId?pool.filter(f=>f.id===options.figureId):options.tab?pool.filter(f=>f.tab===options.tab):pool;if(!chosen.length)throw new Error('내보낼 그림이 없습니다.');chosen.forEach((f,i)=>figurePage(f,i+1));}

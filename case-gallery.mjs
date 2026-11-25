@@ -1,6 +1,6 @@
-import {sceneSVG,locationInfo} from './scenes.mjs?v=20261125.10';
-import {SEVERITY} from './analysis.mjs?v=20261125.10';
-import {placeSummary} from './environment.mjs?v=20261125.10';
+import {sceneSVG,locationInfo} from './scenes.mjs?v=20261125.20';
+import {SEVERITY} from './analysis.mjs?v=20261125.20';
+import {placeSummary} from './environment.mjs?v=20261125.20';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export function caseGalleryMarkup(figures,overrides={}){
  const cases=figures.filter(f=>f.kind==='case');

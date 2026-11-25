@@ -1,15 +1,15 @@
-import {scenarioEvidence,scenarioReviewAudit} from './scenario-review.mjs?v=20261125.10';
+import {scenarioEvidence,scenarioReviewAudit} from './scenario-review.mjs?v=20261125.20';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import zlib from 'node:zlib';
 import PptxGenJS from 'pptxgenjs';
 import JSZip from 'jszip';
 import encoded from './data-base64.mjs?v=20261124.10';
-import {buildModel,analysisRows,analysisBasis,aggregate,audit,sample,CAR,VRU,scenarioKey,csvExport,parseCSV} from './analysis.mjs?v=20261125.10';
-import {figureCatalog,figureDataRows,extraAudit} from './supplement.mjs?v=20261125.10';
-import {extendedAudit,insightSummary,controlSummary} from './extended.mjs?v=20261125.10';
-import {contributionAudit,contributionSummary} from './contribution.mjs?v=20261125.10';
-import {buildPptx} from './export-pptx.mjs?v=20261125.10';
+import {buildModel,analysisRows,analysisBasis,aggregate,audit,sample,CAR,VRU,scenarioKey,csvExport,parseCSV} from './analysis.mjs?v=20261125.20';
+import {figureCatalog,figureDataRows,extraAudit} from './supplement.mjs?v=20261125.20';
+import {extendedAudit,insightSummary,controlSummary} from './extended.mjs?v=20261125.20';
+import {contributionAudit,contributionSummary} from './contribution.mjs?v=20261125.20';
+import {buildPptx} from './export-pptx.mjs?v=20261125.20';
 const pkg=JSON.parse(zlib.gunzipSync(Buffer.from(encoded,'base64'))),m=await buildModel(pkg);
 const catalog=basis=>figureCatalog(m,{basis});
 const fig=(list,id)=>list.find(f=>f.id===id);
@@ -51,14 +51,14 @@ test('all figures, status comparisons, insights and CSV metadata follow the sele
    const f=fig(fs,id);assert.equal(f.denominator,total,id);assert.equal(f.items.reduce((s,x)=>s+x.count,0),total,id);
    const csv=parseCSV(csvExport(figureDataRows(f)));assert.ok(csv.rows.every(x=>x['분석기준']===analysisBasis({basis}).label));
   }
-  const states=fig(fs,'state-severity');assert.deepEqual(states.groups.map(g=>g.total),basis==='reported'?[2752,234,45]:[2752,0,0]);
+  const states=fig(fs,'state-severity');assert.deepEqual(states.groups.map(g=>g.total),basis==='reported'?[2752,176,5,53,45]:[2752,0,0,0,0]);
   assert.equal(fig(fs,'transition-time').denominator,basis==='reported'?176:0);
   assert.equal(controlSummary(rows).remote.length,basis==='reported'?5:0);
   assert.equal(fig(fs,'severe-counterparts').denominator,14);
   assert.ok(insightSummary(m,{basis},'cases').items[0][1].includes(`${n}건`));
   assert.ok(fs.every(f=>f.insight&&f.basis===(f.tab==='domestic'?'domestic':basis)));
   const checks=[...audit(m,rows),...extraAudit(m,rows,rows),...extendedAudit(m,rows,rows),...contributionAudit(m,rows),...scenarioReviewAudit(rows)];
-  assert.equal(checks.length,64);assert.ok(checks.every(x=>x.ok),JSON.stringify(checks.filter(x=>!x.ok)));
+  assert.equal(checks.length,67);assert.ok(checks.every(x=>x.ok),JSON.stringify(checks.filter(x=>!x.ok)));
   assert.ok(sample(rows,20).every(r=>rows.includes(r)));assert.equal(contributionSummary(rows).details.length,134);
  }
  const a=catalog('reported'),b=catalog('confirmed');assert.deepEqual(a.filter(f=>f.tab==='domestic'),b.filter(f=>f.tab==='domestic'));

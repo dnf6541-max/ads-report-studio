@@ -1,14 +1,14 @@
-import {scenarioFigures} from './scenario-viz.mjs?v=20261125.10';
-import {placeSummary,placeGroup,placeAnnual} from './environment.mjs?v=20261125.10';
-import {analysisRows,analysisBasis} from './analysis.mjs?v=20261125.10';
-import {figureInsight} from './figure-insights.mjs?v=20261125.10';
-import {contributionFigures} from './contribution.mjs?v=20261125.10';
+import {scenarioFigures} from './scenario-viz.mjs?v=20261125.20';
+import {placeSummary,placeGroup,placeAnnual} from './environment.mjs?v=20261125.20';
+import {analysisRows,analysisBasis} from './analysis.mjs?v=20261125.20';
+import {figureInsight} from './figure-insights.mjs?v=20261125.20';
+import {contributionFigures} from './contribution.mjs?v=20261125.20';
 /* Additional evidence-based summaries. The original dataset/reviews are unchanged. */
-import {value,countBy,contactCounts,CAR,VRU,MOVEMENT,movementGroup,SEVERITY,DRIVER,LIGHTING,SCENARIOS,aggregate,filtered,pct} from './analysis.mjs?v=20261125.10';
+import {value,countBy,contactCounts,CAR,VRU,MOVEMENT,movementGroup,SEVERITY,DRIVER,LIGHTING,SCENARIOS,aggregate,filtered,pct} from './analysis.mjs?v=20261125.20';
 
-import {extendedFigures,controlSummary,controlEvidence} from './extended.mjs?v=20261125.10';
+import {extendedFigures,controlSummary,controlEvidence,operatingStateSummary,OPERATING_NOTE} from './extended.mjs?v=20261125.20';
 import {TIMING_CONTROL} from './review-data.mjs?v=20261124.10';
-import {environmentSummary,ROADWAY} from './environment.mjs?v=20261125.10';
+import {environmentSummary,ROADWAY} from './environment.mjs?v=20261125.20';
 export const TIMING_REVIEW=TIMING_CONTROL.records;
 const norm=s=>String(s||'').replace(/\s+/g,' ').trim();
 export function timingEvidence(r){
@@ -50,7 +50,7 @@ const chart=(id,tab,title,items,denominator,note='',extra={})=>({id,tab,title,ki
 const table=(id,tab,title,columns,rows,note='')=>({id,tab,title,kind:'table',columns,rows,note});
 export function figureCatalog(model,filter={}) {
  const rows=analysisRows(model,filter),ads=rows,a=aggregate(rows),vru=a.vru,n=rows.length;
- const surf=surfaceSummary(rows),timing=transitionSummary(ads),env=environmentSummary(rows),cols=['직진','회전','변경·합류','정지·주차','기타·불명'];
+ const operating=operatingStateSummary(rows),surf=surfaceSummary(rows),timing=transitionSummary(ads),env=environmentSummary(rows),cols=['직진','회전','변경·합류','정지·주차','기타·불명'];
  const sev=rs=>countBy(rs,'severity',Object.keys(SEVERITY)).map(x=>({...x,label:SEVERITY[x.key]}));
  const figs=[
  chart('counterparts','overview','충돌대상별 사고 구성',a.counterparts,n,`분모: ${analysisBasis(filter).label}. 차량별 사고보고 기준.`),
@@ -60,10 +60,10 @@ export function figureCatalog(model,filter={}) {
  chart('day-night','overview','신고 시각에 따른 주·야간',a.time.map(x=>({...x,label:({day:'주간',night:'야간',unknown:'시간 불명'})[x.key]})),n,'주간 06:00–17:59 / 야간 18:00–05:59. 실제 밝기·일출·일몰 기준과 구분.'),
  chart('lighting','overview','기재된 조명 상태',a.lighting.map(x=>({...x,label:LIGHTING[x.key]})),a.lighting.reduce((s,x)=>s+x.count,0),'Lighting 기재·유효값만 분모. 주야간으로 결측치를 채우지 않음.'),
  chart('road-surface','overview','기재된 노면 상태',surf.counts,surf.available.length,`Roadway Surface 값이 있는 사고만 집계. 양식에 열 없음 ${env.coverage.surface.find(x=>x.key==='not_collected').count}건. 다른 양식의 습윤 체크 ${surf.wetFlagOnly}건은 이 분모에 합산하지 않음.`),
- chart('operating-state','status','사고 당시 ADS 작동상태',countBy(ads,'decision',['include','non_ads','insufficient','conflict']).map(x=>({...x,label:({include:'ADS 운행 확인',non_ads:'수동·원격 운행 등',insufficient:'상태 확인 부족',conflict:'자료 불일치'})[x.key]})),ads.length,'시스템 변수·운행상태 변수·사고 경위의 선후관계를 검수한 결과.'),
+ chart('operating-state','status','사고 당시 제어 방식',operating.groups.map(g=>({key:g.key,label:g.label,count:g.total})),ads.length,OPERATING_NOTE),
  chart('operator','status','보고된 운전·운영인력 유형',countBy(ads,'driver').sort((a,b)=>b.count-a.count).map(x=>({...x,label:DRIVER[x.key]||x.key})),ads.length,'Driver / Operator Type의 인력 위치·구성 신고값. 실제 제어 주체와 별도이며 차내 담당자를 운전자·안전관리자로 나눌 수 없음.'),
  chart('transition-time','status','수동전환 후 충돌까지의 보고 시차',timing.counts,timing.base.length,`차내 수동전환 확인 ${timing.base.length}건 중 시차 구분 ${timing.known.length}건. 단순 ADS 해제와 수동 지속시간은 제외. 약 표현·하한을 보존.`),
- {id:'state-severity',tab:'status',title:'운행상태별 피해수준',kind:'grouped',groups:[['ADS 운행 확인',ads.filter(r=>r.decision==='include')],['수동·원격 운행 등',ads.filter(r=>r.decision==='non_ads')],['상태 불충분·불일치',ads.filter(r=>['insufficient','conflict'].includes(r.decision))]].map(([label,rs])=>({label,total:rs.length,items:sev(rs)})),note:'각 상태 안에서의 구성비. 운행거리·노출량을 보정한 위험도 비교가 아님.'},
+ {id:'state-severity',tab:'status',title:'제어 방식별 사고 심각도',kind:'grouped',groups:operating.groups.map(({rows,...g})=>g),note:OPERATING_NOTE+` 원격 제어 ${controlSummary(rows).remote.length}건 = 원격 운전 ${controlSummary(rows).remoteDriving}건 + 기어 조작만 확인 ${controlSummary(rows).remoteGear}건.`},
  chart('vru-types','vru','취약도로이용자 유형별 사고',countBy(vru,r=>VRU.get(r.counterpart),[...VRU.values()]),vru.length,'이륜차와 스쿠터·스케이트보드를 구분. 기타 비자동차 이용자는 별도.'),
  table('vru-movement','vru','취약도로이용자 유형과 ADS 행동',['상대',...cols],[...VRU.values()].map(v=>[v,...cols.map(m=>vru.filter(r=>VRU.get(r.counterpart)===v&&movementGroup(r)===m).length)]),'SV Pre-Crash Movement 기준. 정지·주차를 정지 시작 행동으로 해석하지 않음.'),
  table('vru-environment','vru','취약도로이용자 사고의 시간·장소',['시간','교차로','그 외 명시 장소','장소 미상·미기재'],[['day','주간'],['night','야간'],['unknown','시간 불명']].map(([k,label])=>[label,vru.filter(r=>r.time===k&&r.roadway==='Intersection').length,vru.filter(r=>r.time===k&&placeGroup(r)==='other_known').length,vru.filter(r=>r.time===k&&placeGroup(r)==='unavailable').length]),'주간 06:00–17:59 / 야간 18:00–05:59.'),
