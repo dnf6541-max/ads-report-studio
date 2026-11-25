@@ -5,7 +5,11 @@
       "runId": "45532878684",
       "createdAt": "2026-11-25T02:26:00.941Z",
       "reservedUSD": 20,
-      "settled": false
+      "settled": true,
+      "actualUSD": 0.00248,
+      "calls": 1,
+      "unknownCharge": false,
+      "finishedAt": "2026-11-25T02:26:05.354Z"
     }
   ]
 }

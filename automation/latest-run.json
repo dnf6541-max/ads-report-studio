@@ -1,1 +1,25 @@
-{"schemaVersion":1,"status":"awaiting_api_secret","note":"API 연결과 최초 실행은 아직 검증되지 않았습니다. OPENAI_API_KEY 등록 후 connection 모드로 시험합니다. 데이터 집계는 기존 검수 자료를 유지합니다."}
+{
+  "schemaVersion": 1,
+  "runId": "45532878684",
+  "mode": "connection",
+  "startedAt": "2026-11-25T02:26:02.444Z",
+  "model": "gpt-6-astra",
+  "reasoningEffort": "xhigh",
+  "promptVersion": "2026-11-25.monthly-v1",
+  "status": "connection_verified",
+  "accepted": [],
+  "held": [],
+  "usage": [
+    {
+      "responseId": "resp_0022195d4595c43d016b06473b505c87d18e8e364831c9b501",
+      "inputTokens": 63,
+      "outputTokens": 37,
+      "reasoningTokens": 21,
+      "conservativeUSD": 0.00248
+    }
+  ],
+  "note": "API project, selected model and structured output responded. No source data changed.",
+  "finishedAt": "2026-11-25T02:26:05.354Z",
+  "conservativeUSD": 0.00248,
+  "apiCalls": 1
+}
