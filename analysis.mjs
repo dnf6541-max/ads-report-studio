@@ -1,4 +1,4 @@
-import {scenarioClassification,SCENARIO_PENDING_LABELS} from './scenario-review.mjs?v=20261125.23';
+import {scenarioClassification,SCENARIO_PENDING_LABELS} from './scenario-review.mjs?v=20261125.24';
 /* Deterministic SGO aggregation. Shared by the browser and Node verification. */
 export const STATUS = {include:'사고 당시 ADS 운행 확인',non_ads:'사고 당시 수동·원격·해제 상태',insufficient:'사고 당시 상태 확인 부족',conflict:'운행상태 자료 불일치',outside:'ADS 시스템 분석 밖',pending:'재검토 필요'};
 export const SEVERITY = {none:'부상 보고 없음',minor:'경상 (Minor)',moderate:'중등도 (Moderate)',serious:'중상 (Serious)',fatal:'사망 (Fatality)',unknown:'불명'};
@@ -99,7 +99,7 @@ export async function buildModel(pkg,sources=pkg.sources) {
 function normalize(raw,g,evidence,sourceNames,sourceMeta){
   const id=value(raw,'Report ID'),meta=sourceMeta?.get(`${id}|${raw['Report Version']}`);
   const r={id,raw,schema:meta?.era||'',sourceFields:meta?.headers||[],evidenceRaw:evidence,narrative:value(evidence,'Narrative'),members:g.members,
-    version:value(raw,'Report Version'),narrativeVersion:String(g.narrativeVersion),
+    version:value(raw,'Report Version'),narrativeVersion:String(g.narrativeVersion),autoReview:g.autoReview||null,
     source:sourceNames.get(`${id}|${raw['Report Version']}`),system:value(raw,'Automation System Engaged?').split(',')[0],
     decision:g.decision,reason:g.reason,method:g.method||'',scenarioLegacy:g.scenario||'',reviewRawFingerprint:g.fingerprints?.[id]||'',reviewNarrativeFingerprint:g.narrativeFingerprint||'',month:parseMonth(raw['Incident Date']),
     company:value(raw,'Reporting Entity'),counterpart:value(raw,'Crash With'),severity:severity(raw['Highest Injury Severity Alleged']),

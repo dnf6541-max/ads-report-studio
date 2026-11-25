@@ -1,15 +1,15 @@
-import {reconstructionPrimitives} from './reconstruction-diagram.mjs?v=20261125.23';
-import {CONTACT_POINTS,CONTACT_LABELS} from './contact-diagram.mjs?v=20261125.23';
-import {SCENARIO_SCHEMES} from './scenario-viz.mjs?v=20261125.23';
-import {placeSummary} from './environment.mjs?v=20261125.23';
-import {analysisRows,analysisBasis} from './analysis.mjs?v=20261125.23';
-import {contributionSummary,contributionInsights,compactContributionItems} from './contribution.mjs?v=20261125.23';
-import {sceneFor,locationInfo} from './scenes.mjs?v=20261125.23';
+import {reconstructionPrimitives} from './reconstruction-diagram.mjs?v=20261125.24';
+import {CONTACT_POINTS,CONTACT_LABELS} from './contact-diagram.mjs?v=20261125.24';
+import {SCENARIO_SCHEMES} from './scenario-viz.mjs?v=20261125.24';
+import {placeSummary} from './environment.mjs?v=20261125.24';
+import {analysisRows,analysisBasis} from './analysis.mjs?v=20261125.24';
+import {contributionSummary,contributionInsights,compactContributionItems} from './contribution.mjs?v=20261125.24';
+import {sceneFor,locationInfo} from './scenes.mjs?v=20261125.24';
 /* Editable PowerPoint export. Native charts include their Excel workbooks. */
-import {aggregate,filtered,pct,SEVERITY,CAR,VRU,countBy} from './analysis.mjs?v=20261125.23';
-import {figureCatalog,figureDataRows,transitionSummary,surfaceSummary} from './supplement.mjs?v=20261125.23';
+import {aggregate,filtered,pct,SEVERITY,CAR,VRU,countBy} from './analysis.mjs?v=20261125.24';
+import {figureCatalog,figureDataRows,transitionSummary,surfaceSummary} from './supplement.mjs?v=20261125.24';
 
-import {insightSummary} from './extended.mjs?v=20261125.23';
+import {insightSummary} from './extended.mjs?v=20261125.24';
 const C={navy:'193D50',teal:'148B82',blue:'277EAE',sky:'5AAAC8',amber:'D58A3B',muted:'637D8B',line:'D7E2E8',wash:'F3F7F9',grey:'83949E',white:'FFFFFF'};
 const palette=[C.teal,C.blue,C.sky,C.amber,C.grey,'B3C1C8'];
 const sevColor={none:C.teal,minor:'358EBC',moderate:'DF9F44',serious:'CB6A40',fatal:'AD4357',unknown:'B4BFC8'};

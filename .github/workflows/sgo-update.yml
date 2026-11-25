@@ -1,0 +1,85 @@
+name: SGO data update
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Connection test or update official ADS data
+        type: choice
+        options: [connection, pilot, refresh]
+        default: connection
+  push:
+    paths:
+      - '.github/sgo-update-request.json'
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+concurrency:
+  group: sgo-monthly-update
+  cancel-in-progress: false
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Reserve API budget before processing
+        id: reserve
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          node automation/monthly-update.mjs reserve
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .github/sgo-budget.json
+          git commit -m 'Reserve budget for SGO analysis'
+          git push
+      - name: Test connection or refresh data
+        id: update
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          REQUESTED_MODE: ${{ inputs.mode }}
+        run: |
+          MODE="$REQUESTED_MODE"
+          if [ -z "$MODE" ]; then MODE=$(node -e 'console.log(JSON.parse(require("fs").readFileSync(".github/sgo-update-request.json","utf8")).mode)'); fi
+          node automation/monthly-update.mjs "$MODE"
+      - name: Preserve usage and audit even on failure
+        if: always() && steps.reserve.outcome == 'success'
+        run: |
+          git add .github/sgo-budget.json automation/latest-run.json automation/runs
+          if ! git diff --cached --quiet; then git commit -m 'Record SGO API usage and verification'; git push; fi
+      - name: Validate updated package
+        if: steps.update.outcome == 'success'
+        run: node automation/verify-current.mjs
+      - name: Commit verified report package
+        if: success()
+        run: |
+          git add data-part1.mjs data-part2.mjs data-base64.mjs app.mjs index.html
+          if ! git diff --cached --quiet; then git commit -m 'Update verified SGO report data'; git push; fi
+      - name: Prepare public report files
+        if: success()
+        run: |
+          mkdir -p public-site
+          rsync -a --exclude=.git --exclude=.github --exclude=node_modules --exclude=public-site --exclude=automation/runs ./ public-site/
+      - uses: actions/configure-pages@v5
+        if: success()
+      - uses: actions/upload-pages-artifact@v4
+        if: success()
+        with:
+          path: public-site
+      - uses: actions/deploy-pages@v4
+        id: deployment
+        if: success()
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.reserve.outcome == 'success'
+        with:
+          name: sgo-run-audit
+          path: automation/latest-run.json

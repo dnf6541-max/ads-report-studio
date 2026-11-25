@@ -1,9 +1,9 @@
 import test from 'node:test';import assert from 'node:assert/strict';import z from 'node:zlib';
-import encoded from './data-base64.mjs?v=20261124.10';import {buildModel,filtered,CAR,VRU,countBy} from './analysis.mjs?v=20261125.23';
-import {coverage,weatherTags,roadTags,environmentSummary,environmentAudit} from './environment.mjs?v=20261125.23';
-import {controlSummary,controlEvidence,collisionEvidence,caseEvidence,severeSummary,extendedAudit,insightSummary} from './extended.mjs?v=20261125.23';
-import {figureCatalog,transitionSummary,timingEvidence} from './supplement.mjs?v=20261125.23';
-import {contributionSummary,contributionAudit}from './contribution.mjs?v=20261125.23';import{locationInfo,sceneFor,sceneSVG,caseSceneIds}from './scenes.mjs?v=20261125.23';
+import encoded from './data-base64.mjs?v=20261124.10';import {buildModel,filtered,CAR,VRU,countBy} from './analysis.mjs?v=20261125.24';
+import {coverage,weatherTags,roadTags,environmentSummary,environmentAudit} from './environment.mjs?v=20261125.24';
+import {controlSummary,controlEvidence,collisionEvidence,caseEvidence,severeSummary,extendedAudit,insightSummary} from './extended.mjs?v=20261125.24';
+import {figureCatalog,transitionSummary,timingEvidence} from './supplement.mjs?v=20261125.24';
+import {contributionSummary,contributionAudit}from './contribution.mjs?v=20261125.24';import{locationInfo,sceneFor,sceneSVG,caseSceneIds}from './scenes.mjs?v=20261125.24';
 const pkg=JSON.parse(z.gunzipSync(Buffer.from(encoded,'base64'))),m=await buildModel(pkg),norm=s=>String(s).replace(/\s+/g,' ').trim();
 test('2026 actual weather and roadway fields are not marked unknown just because old fields disappeared',()=>{const rows=filtered(m.impact,{from:'2026-01',to:'2026-12'}),e=environmentSummary(rows);assert.equal(rows.length,916);assert.equal(e.coverage.weather.find(x=>x.key==='reported').count,916);assert.equal(e.coverage.lighting.find(x=>x.key==='not_collected').count,916);assert.equal(e.coverage.place.find(x=>x.key==='unknown').count,1);assert.equal(e.wet.length,19);assert.equal(e.weather.find(x=>x.key==='rain').count,37);assert.equal(e.weather.find(x=>x.key==='partly').count,105);assert.equal(e.road.find(x=>x.key==='work').count,16);});
 test('schema-absent, blank and explicitly unknown remain distinct',()=>{assert.equal(coverage({raw:{Lighting:''},sourceFields:['Lighting']},'lighting'),'blank');assert.equal(coverage({raw:{Lighting:'Unknown'},sourceFields:['Lighting']},'lighting'),'unknown');assert.equal(coverage({raw:{Lighting:''},sourceFields:['Roadway Type']},'lighting'),'not_collected');assert.equal(coverage({raw:{Lighting:'Daylight'},sourceFields:['Lighting']},'lighting'),'reported');});

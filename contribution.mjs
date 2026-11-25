@@ -1,12 +1,12 @@
-import {caseAnalysis,caseAnalysisStatus} from './case-analysis.mjs?v=20261125.23';
+import {caseAnalysis,caseAnalysisStatus} from './case-analysis.mjs?v=20261125.24';
 import data from './contribution-data.mjs?v=20261124.10';
-import {countBy,pct,SEVERITY,COUNTERPART} from './analysis.mjs?v=20261125.23';
+import {countBy,pct,SEVERITY,COUNTERPART} from './analysis.mjs?v=20261125.24';
 const byId=new Map(data.records.map(x=>[x.id,x]));
 const norm=s=>String(s||'').replace(/\s+/g,' ').trim();
 export const TIERS={explicit_ads_issue:'ADS 기능·사고 후 대응 명시',explicit_vehicle_hardware:'차량 부품 분리 명시',maneuver_contact_candidate:'기동·접촉 경위 확장 검토'};
 export const CONTRIBUTION_SCOPES={all:'전체 후보',priority:'우선검토',broad:'확장 검토 후보'};
 export function contributionScope(filter={}){const k=typeof filter==='string'?filter:filter.contribution||'all';if(!Object.hasOwn(CONTRIBUTION_SCOPES,k))throw new Error('유효하지 않은 후보 선택입니다.');return k;}
-export function contributionEvidence(r){const c=byId.get(r.id);return c&&r.decision==='include'&&String(c.narrativeVersion)===r.narrativeVersion&&c.evidence.every(s=>norm(r.narrative).includes(norm(s)))?c:null;}
+export function contributionEvidence(r){const c=r.autoReview?r.autoReview.contribution:byId.get(r.id);return c&&r.decision==='include'&&String(c.narrativeVersion)===r.narrativeVersion&&c.evidence.every(s=>norm(r.narrative).includes(norm(s)))?c:null;}
 export function contributionSummary(rows,filter={}){
  const scope=contributionScope(filter),details=rows.map(r=>({r,c:contributionEvidence(r)})).filter(x=>x.c),priority=details.filter(x=>x.c.priorityEligible),broad=details.filter(x=>!x.c.priorityEligible),selected=scope==='priority'?priority:scope==='broad'?broad:details;
  return {scope,label:CONTRIBUTION_SCOPES[scope],details,priority,broad,selected,n:selected.length,notSelected:rows.length-details.length,types:countBy(selected,x=>x.c.typeLabelKo).sort((a,b)=>b.count-a.count).map(x=>({...x,label:x.key})),severity:countBy(selected,x=>x.r.severity,Object.keys(SEVERITY)).map(x=>({...x,label:SEVERITY[x.key]})),counterparts:countBy(selected,x=>COUNTERPART[x.r.counterpart]||x.r.counterpart).sort((a,b)=>b.count-a.count).map(x=>({...x,label:x.key}))};

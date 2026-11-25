@@ -3,7 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test verify.mjs verify-extended.mjs verify-pptx.mjs verify-basis.mjs verify-place-cases.mjs verify-scenario-review.mjs verify-control-severity.mjs verify-case-analysis.mjs"
+    "test": "node --test verify.mjs verify-extended.mjs verify-pptx.mjs verify-basis.mjs verify-place-cases.mjs verify-scenario-review.mjs verify-control-severity.mjs verify-case-analysis.mjs automation/verify-automation.mjs",
+    "verify:current": "node automation/verify-current.mjs"
   },
   "devDependencies": {
     "pptxgenjs": "4.0.1",

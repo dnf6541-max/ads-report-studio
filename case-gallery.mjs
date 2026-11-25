@@ -1,7 +1,7 @@
-import {caseAnalysis,caseAnalysisMarkup} from './case-analysis.mjs?v=20261125.23';
-import {sceneSVG,locationInfo} from './scenes.mjs?v=20261125.23';
-import {SEVERITY} from './analysis.mjs?v=20261125.23';
-import {placeSummary} from './environment.mjs?v=20261125.23';
+import {caseAnalysis,caseAnalysisMarkup} from './case-analysis.mjs?v=20261125.24';
+import {sceneSVG,locationInfo} from './scenes.mjs?v=20261125.24';
+import {SEVERITY} from './analysis.mjs?v=20261125.24';
+import {placeSummary} from './environment.mjs?v=20261125.24';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export function caseGalleryMarkup(figures,overrides={}){
  const cases=figures.filter(f=>f.kind==='case');

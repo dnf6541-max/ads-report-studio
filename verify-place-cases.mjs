@@ -5,12 +5,12 @@ import zlib from 'node:zlib';
 import PptxGenJS from 'pptxgenjs';
 import JSZip from 'jszip';
 import encoded from './data-base64.mjs?v=20261124.10';
-import {buildModel,analysisRows} from './analysis.mjs?v=20261125.23';
-import {placeSummary,placeAnnual,placeGroup,placeKey,placeStatus} from './environment.mjs?v=20261125.23';
-import {figureCatalog,figureDataRows} from './supplement.mjs?v=20261125.23';
-import {sceneFor,sceneSVG,caseSceneIds} from './scenes.mjs?v=20261125.23';
-import {caseGalleryMarkup} from './case-gallery.mjs?v=20261125.23';
-import {buildPptx} from './export-pptx.mjs?v=20261125.23';
+import {buildModel,analysisRows} from './analysis.mjs?v=20261125.24';
+import {placeSummary,placeAnnual,placeGroup,placeKey,placeStatus} from './environment.mjs?v=20261125.24';
+import {figureCatalog,figureDataRows} from './supplement.mjs?v=20261125.24';
+import {sceneFor,sceneSVG,caseSceneIds} from './scenes.mjs?v=20261125.24';
+import {caseGalleryMarkup} from './case-gallery.mjs?v=20261125.24';
+import {buildPptx} from './export-pptx.mjs?v=20261125.24';
 const pkg=JSON.parse(zlib.gunzipSync(Buffer.from(encoded,'base64'))),m=await buildModel(pkg);
 test('Roadway Type is present in both source schemas; only 2 reviewed records actually report Unknown',()=>{
  assert.ok(pkg.sources.every(s=>s.headers.includes('Roadway Type')));

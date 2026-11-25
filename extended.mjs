@@ -1,8 +1,8 @@
-import {placeGroup} from './environment.mjs?v=20261125.23';
-import {analysisRows,analysisBasis} from './analysis.mjs?v=20261125.23';
+import {placeGroup} from './environment.mjs?v=20261125.24';
+import {analysisRows,analysisBasis} from './analysis.mjs?v=20261125.24';
 /* Shared insight and evidence calculations for HTML, CSV and native PPTX. */
-import {CAR,VRU,COUNTERPART,SEVERITY,SCENARIOS,value,countBy,pct,aggregate,filtered} from './analysis.mjs?v=20261125.23';
-import {environmentSummary,environmentAudit,ROADWAY,COVERAGE} from './environment.mjs?v=20261125.23';
+import {CAR,VRU,COUNTERPART,SEVERITY,SCENARIOS,value,countBy,pct,aggregate,filtered} from './analysis.mjs?v=20261125.24';
+import {environmentSummary,environmentAudit,ROADWAY,COVERAGE} from './environment.mjs?v=20261125.24';
 import {CONTROL_REVIEW,CASE_REVIEW,COLLISION_REVIEW} from './review-data.mjs?v=20261124.10';
 export const CONTROL={on_board_transition:'차내 수동전환 확인',remote_direct:'원격 직접 제어 확인',manual_ongoing:'수동운행 · 전환 시점 불명',disengaged_stationary:'ADS 해제 후 정지',control_unclear:'해제·개입만 확인',unreviewed:'세부 검토 필요'};
 export const REASONS={external_traffic_hazard:'다른 이용자·장애물 대응',ads_behavior_system_issue:'ADS 행동·시스템 관련',odd_boundary:'ODD 이탈',planned_operational_manual_maneuver:'계획된 수동 조작',other_stated:'그 외 명시된 사유',not_specified:'전환 사유 미명시'};
@@ -12,7 +12,7 @@ const collisionMap=new Map(Object.entries(COLLISION_REVIEW.records||{}).map(([id
 export const isHigh=r=>['serious','fatal'].includes(r.severity);
 const norm=s=>String(s||'').replace(/\s+/g,' ').trim();
 const includes=(r,s)=>!!s&&norm(r.narrative).includes(norm(s));
-export function controlEvidence(r){const c=controlMap.get(r.id);return c&&r.decision==='non_ads'&&String(c.narrativeVersion)===r.narrativeVersion&&(c.controlEvidence||c.evidence).every(s=>includes(r,s))?c:null;}
+export function controlEvidence(r){const c=r.autoReview?.control||controlMap.get(r.id);return c&&r.decision==='non_ads'&&String(c.narrativeVersion)===r.narrativeVersion&&(c.controlEvidence||c.evidence).every(s=>includes(r,s))?c:null;}
 export function collisionEvidence(r){const c=collisionMap.get(r.id);if(!c||r.decision!=='include'||!CAR.has(r.counterpart)||String(c.narrativeVersion)!==r.narrativeVersion)return null;return c.evidence&&!(Array.isArray(c.evidence)?c.evidence:[c.evidence]).every(s=>includes(r,s))?null:c;}
 export function caseEvidence(r){const c=CASE_REVIEW.cases?.[r.id];return c&&r.decision==='include'&&String(c.narrativeVersion)===r.narrativeVersion?c:null;}
 export function controlSummary(ads){

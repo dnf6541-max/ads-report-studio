@@ -1,6 +1,6 @@
 /* This diagram visualizes reported contact flags, never inferred trajectories. */
-import {contactAreas} from './scenario-review.mjs?v=20261125.23';
-import {MOVEMENT,COUNTERPART,value} from './analysis.mjs?v=20261125.23';
+import {contactAreas} from './scenario-review.mjs?v=20261125.24';
+import {MOVEMENT,COUNTERPART,value} from './analysis.mjs?v=20261125.24';
 export const CONTACT_POINTS={'Front Left':[-36,-60],Front:[0,-65],'Front Right':[36,-60],Left:[-43,0],Right:[43,0],'Rear Left':[-36,60],Rear:[0,65],'Rear Right':[36,60],Top:[-14,0],Bottom:[14,0]};
 export const CONTACT_LABELS={'Front Left':'좌전',Front:'전면','Front Right':'우전',Left:'좌측',Right:'우측','Rear Left':'좌후',Rear:'후면','Rear Right':'우후',Top:'상부',Bottom:'하부',Unknown:'불명'};
 export function contactScene(r){return {layout:'contact',ads:[225,210,0],cp:[575,210,0],paths:[],hits:[],cpLabel:COUNTERPART[r.counterpart]||r.counterpart||'상대',context:'원자료에 기재된 접촉부위 · 실제 진로·위치·거리 재현 아님',svAreas:contactAreas(r,'SV'),cpAreas:contactAreas(r,'CP'),svMovement:MOVEMENT[value(r.raw,'SV Pre-Crash Movement')]||value(r.raw,'SV Pre-Crash Movement')||'미기재',cpMovement:MOVEMENT[value(r.raw,'CP Pre-Crash Movement')]||value(r.raw,'CP Pre-Crash Movement')||'미기재'};}

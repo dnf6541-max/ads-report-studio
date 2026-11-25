@@ -6,8 +6,8 @@ import zlib from 'node:zlib';
 import PptxGenJS from 'pptxgenjs';
 import JSZip from 'jszip';
 import vm from 'node:vm';
-import {buildModel} from './analysis.mjs?v=20261125.23';
-import {buildPptx} from './export-pptx.mjs?v=20261125.23';
+import {buildModel} from './analysis.mjs?v=20261125.24';
+import {buildPptx} from './export-pptx.mjs?v=20261125.24';
 const encoded=(await import('./data-base64.mjs?v=20261124.10')).default;
 const pkg=JSON.parse(zlib.gunzipSync(Buffer.from(encoded,'base64')));
 const model=await buildModel(pkg);
@@ -45,7 +45,7 @@ test('vendored browser bundle exposes the constructor used by the app',()=>{
  const context={setTimeout,clearTimeout,Buffer};context.window=context;context.self=context;
  vm.runInNewContext(fs.readFileSync(new URL('./pptxgen.bundle.js',import.meta.url),'utf8'),context);
  assert.equal(typeof context.PptxGenJS,'function');assert.equal(typeof context.JSZip,'function');
- const app=fs.readFileSync(new URL('./app.mjs?v=20261125.23',import.meta.url),'utf8');assert.ok(app.includes('buildPptx(window.PptxGenJS,'));
+ const app=fs.readFileSync(new URL('./app.mjs?v=20261125.24',import.meta.url),'utf8');assert.ok(app.includes('buildPptx(window.PptxGenJS,'));
 });
 
 test('domestic figure and slide notes retain their separate Korean official source',async()=>{

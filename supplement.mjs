@@ -1,15 +1,15 @@
-import {caseAnalysisDataRow} from './case-analysis.mjs?v=20261125.23';
-import {scenarioFigures} from './scenario-viz.mjs?v=20261125.23';
-import {placeSummary,placeGroup,placeAnnual} from './environment.mjs?v=20261125.23';
-import {analysisRows,analysisBasis} from './analysis.mjs?v=20261125.23';
-import {figureInsight} from './figure-insights.mjs?v=20261125.23';
-import {contributionFigures} from './contribution.mjs?v=20261125.23';
+import {caseAnalysisDataRow} from './case-analysis.mjs?v=20261125.24';
+import {scenarioFigures} from './scenario-viz.mjs?v=20261125.24';
+import {placeSummary,placeGroup,placeAnnual} from './environment.mjs?v=20261125.24';
+import {analysisRows,analysisBasis} from './analysis.mjs?v=20261125.24';
+import {figureInsight} from './figure-insights.mjs?v=20261125.24';
+import {contributionFigures} from './contribution.mjs?v=20261125.24';
 /* Additional evidence-based summaries. The original dataset/reviews are unchanged. */
-import {value,countBy,contactCounts,CAR,VRU,MOVEMENT,movementGroup,SEVERITY,DRIVER,LIGHTING,SCENARIOS,aggregate,filtered,pct} from './analysis.mjs?v=20261125.23';
+import {value,countBy,contactCounts,CAR,VRU,MOVEMENT,movementGroup,SEVERITY,DRIVER,LIGHTING,SCENARIOS,aggregate,filtered,pct} from './analysis.mjs?v=20261125.24';
 
-import {extendedFigures,controlSummary,controlEvidence,operatingStateSummary,OPERATING_NOTE} from './extended.mjs?v=20261125.23';
+import {extendedFigures,controlSummary,controlEvidence,operatingStateSummary,OPERATING_NOTE} from './extended.mjs?v=20261125.24';
 import {TIMING_CONTROL} from './review-data.mjs?v=20261124.10';
-import {environmentSummary,ROADWAY} from './environment.mjs?v=20261125.23';
+import {environmentSummary,ROADWAY} from './environment.mjs?v=20261125.24';
 export const TIMING_REVIEW=TIMING_CONTROL.records;
 const norm=s=>String(s||'').replace(/\s+/g,' ').trim();
 export function timingEvidence(r){

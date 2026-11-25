@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "model": "gpt-6-astra",
+  "reasoningEffort": "xhigh",
+  "maxOutputTokens": 24000,
+  "runBudgetUSD": 20,
+  "rollingBudgetUSD": 80,
+  "budgetWindowDays": 32,
+  "maxRecordsPerRun": 60,
+  "standardInputPerMillionUSD": 10,
+  "standardOutputPerMillionUSD": 50,
+  "sources": [
+    {"era":"current","url":"https://static.nhtsa.gov/odi/ffdd/sgo-2021-01/SGO-2021-01_Incident_Reports_ADS.csv"},
+    {"era":"archive","url":"https://static.nhtsa.gov/odi/ffdd/sgo-2021-01/Archive-2021-2025/SGO-2021-01_Incident_Reports_ADS.csv"}
+  ]
+}
