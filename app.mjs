@@ -1,20 +1,21 @@
-import {APPROVAL_KEY,createApproval,applyApprovals} from './manual-review.mjs?v=20261125.26';
-import {reportCases} from './case-analysis.mjs?v=20261125.25';
-import {caseAnalysis,caseAnalysisMarkup,caseAnalysisDataRow,caseAnalysisRequest,caseAnalysisStatus,sourceFingerprint} from './case-analysis.mjs?v=20261125.25';
-import scenarioAuditLog from './scenario-audit.mjs?v=20261125.25';
-import {scenarioEvidence,scenarioReviewAudit,SCENARIO_REVIEW_STATUS,scenarioReviewMeta,contactAreas} from './scenario-review.mjs?v=20261125.25';
-import {scenarioDiagramSVG} from './scenario-viz.mjs?v=20261125.25';
-import {caseGalleryMarkup} from './case-gallery.mjs?v=20261125.25';
-import {placeSummary,placeGroup,placeKey,placeStatus} from './environment.mjs?v=20261125.25';
-import {analysisRows,analysisBasis,ANALYSIS_BASES,scenarioKey,scenarioLabel} from './analysis.mjs?v=20261125.25';
+import {DOMESTIC,domesticFigures,domesticAudit} from './domestic-data.mjs?v=20261125.27';
+import {APPROVAL_KEY,createApproval,applyApprovals} from './manual-review.mjs?v=20261125.27';
+import {reportCases} from './case-analysis.mjs?v=20261125.27';
+import {caseAnalysis,caseAnalysisMarkup,caseAnalysisDataRow,caseAnalysisRequest,caseAnalysisStatus,sourceFingerprint} from './case-analysis.mjs?v=20261125.27';
+import scenarioAuditLog from './scenario-audit.mjs?v=20261125.27';
+import {scenarioEvidence,scenarioReviewAudit,SCENARIO_REVIEW_STATUS,scenarioReviewMeta,contactAreas} from './scenario-review.mjs?v=20261125.27';
+import {scenarioDiagramSVG} from './scenario-viz.mjs?v=20261125.27';
+import {caseGalleryMarkup} from './case-gallery.mjs?v=20261125.27';
+import {placeSummary,placeGroup,placeKey,placeStatus} from './environment.mjs?v=20261125.27';
+import {analysisRows,analysisBasis,ANALYSIS_BASES,scenarioKey,scenarioLabel} from './analysis.mjs?v=20261125.27';
 import {COLLISION_AUDIT,CONTROL_AUDIT} from './review-data.mjs?v=20261124.10';
-import {contributionSummary,contributionEvidence,contributionInsights,contributionAudit,TIERS,CONTRIBUTION_SCOPES,compactContributionItems} from './contribution.mjs?v=20261125.25';
-import {sceneFor,sceneSVG,locationInfo} from './scenes.mjs?v=20261125.25';
-import {STATUS,SEVERITY,SCENARIOS,CAR,VRU,COUNTERPART,MOVEMENT,DRIVER,LIGHTING,value,pct,parseCSV,selectFields,sha256,buildModel,filtered,countBy,aggregate,contactCounts,movementGroup,sample,audit,csvExport} from './analysis.mjs?v=20261125.25';
-import {surfaceSummary,transitionSummary,timingEvidence,figureCatalog,figureDataRows,extraAudit} from './supplement.mjs?v=20261125.26';
-import {environmentSummary,environmentEvidence,hasField,COVERAGE,ROADWAY,ENV_SOURCES} from './environment.mjs?v=20261125.25';
-import {extendedAudit,insightSummary,operatingStateSummary,operatingStateKey,OPERATING_STATES,controlSummary,controlEvidence,collisionEvidence,caseEvidence,severeSummary,isHigh,CONTROL,REASONS,FORMS} from './extended.mjs?v=20261125.25';
-import {buildPptx} from './export-pptx.mjs?v=20261125.25';
+import {contributionSummary,contributionEvidence,contributionInsights,contributionAudit,TIERS,CONTRIBUTION_SCOPES,compactContributionItems} from './contribution.mjs?v=20261125.27';
+import {sceneFor,sceneSVG,locationInfo} from './scenes.mjs?v=20261125.27';
+import {STATUS,SEVERITY,SCENARIOS,CAR,VRU,COUNTERPART,MOVEMENT,DRIVER,LIGHTING,value,pct,parseCSV,selectFields,sha256,buildModel,filtered,countBy,aggregate,contactCounts,movementGroup,sample,audit,csvExport} from './analysis.mjs?v=20261125.27';
+import {surfaceSummary,transitionSummary,timingEvidence,figureCatalog,figureDataRows,extraAudit} from './supplement.mjs?v=20261125.27';
+import {environmentSummary,environmentEvidence,hasField,COVERAGE,ROADWAY,ENV_SOURCES} from './environment.mjs?v=20261125.27';
+import {extendedAudit,insightSummary,operatingStateSummary,operatingStateKey,OPERATING_STATES,controlSummary,controlEvidence,collisionEvidence,caseEvidence,severeSummary,isHigh,CONTROL,REASONS,FORMS} from './extended.mjs?v=20261125.27';
+import {buildPptx} from './export-pptx.mjs?v=20261125.27';
 
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -42,7 +43,7 @@ async function init(){
     const {default:encoded}=await import('./data-base64.mjs?v=9a3a71d1b212174d');
     const packed=Uint8Array.from(atob(encoded),c=>c.charCodeAt(0));
     state.pkg=await new Response(new Blob([packed]).stream().pipeThrough(new DecompressionStream('gzip'))).json();
-    state.sources=state.pkg.sources;try{state.approvals=JSON.parse(localStorage.getItem(APPROVAL_KEY)||'[]');if(!Array.isArray(state.approvals))state.approvals=[];}catch{state.approvals=[];}await rebuildApproved();try{const saved=JSON.parse(localStorage.getItem('ads-scene-overrides-v1')||'{}');state.pkg.sceneOverrides=Object.fromEntries(Object.entries(saved).filter(([id,v])=>state.model.records.some(r=>r.id===id&&r.narrativeVersion===v.narrativeVersion&&v.sourceFingerprint===sourceFingerprint(r))));}catch{}render();
+    state.pkg.domestic=DOMESTIC;state.sources=state.pkg.sources;try{state.approvals=JSON.parse(localStorage.getItem(APPROVAL_KEY)||'[]');if(!Array.isArray(state.approvals))state.approvals=[];}catch{state.approvals=[];}await rebuildApproved();try{const saved=JSON.parse(localStorage.getItem('ads-scene-overrides-v1')||'{}');state.pkg.sceneOverrides=Object.fromEntries(Object.entries(saved).filter(([id,v])=>state.model.records.some(r=>r.id===id&&r.narrativeVersion===v.narrativeVersion&&v.sourceFingerprint===sourceFingerprint(r))));}catch{}render();
   }catch(error){$('#app').innerHTML=`<main class="loading"><h1>데이터를 불러오지 못했습니다</h1><p>${esc(error.message)}</p><button id="reload">다시 시도</button><p>파일을 직접 여는 대신 GitHub Pages 또는 로컬 HTTP 서버에서 실행해 주세요.</p></main>`;$('#reload').onclick=()=>location.reload();}
 }
 
@@ -136,9 +137,9 @@ function vruReport(all){
 }
 
 function domesticReport(){
-  const d=state.pkg.domestic;
-  const body=`<div class="report-columns"><div class="report-main">${section('01','사고 신고 추이','2022년 ~ 2025년 9월')}<div class="annual-block">${bars(d.annual.map(x=>({label:x.year,count:x.count})),null)}<div class="stat-callout"><p>누적</p><div class="hero-number">112<small>건</small></div><p>2022 ~ 2025.9</p></div></div><p class="small-note">2025년은 1–9월 집계이므로 전년도 연간 건수와 직접 비교할 때 기간 차이에 유의.</p><div class="split-bottom domestic-bottom"><section>${section('02','자율주행모드 사고')}<div class="stat-callout"><div class="hero-number">약 35<small>%</small></div><p>전체 신고 사고 중<br>자율주행모드 운행 중 사고의 비중</p></div><p class="small-note">공식 발표의 근삿값을 그대로 표시.<br>정확한 사고 건수로 환산하지 않음.</p></section><section>${section('03','사고 발생 속도')}<div class="stat-callout"><div class="hero-number">30<small>km/h 이하</small></div><p>사고가 주로 발생한<br>저속 구간에 대한 공식 발표 요약</p></div><p class="small-note">속도대별 상세 건수는 이 자료에 없음.<br>임의의 속도 분포 그래프를 만들지 않음.</p></section></div></div>${insightBlock('domestic')}</div>`;
-  return slide(d.title,'사고 신고 추이 · 운행모드 · 속도 특성 | 국내 공식 발표',`집계 기준 · 2025.9`,body,'05',`출처: ${link(d.sourceUrl,d.source)} · 발표 2025.11.28 / 출처 확인 2026.11.24.<br>국내 공식 통계 스냅샷. 미국 SGO 분석·필터와 별도이며 양국 건수를 직접 합산하지 않음.`);
+ const d=DOMESTIC,figs=domesticFigures();
+ const body=`<div class="report-columns"><div class="report-main">${section('01','연도별 사고건수','공식 페이지 연도별 표')}<div class="annual-block">${bars(d.annual.map(x=>({label:x.year,count:x.count})),null)}<div class="stat-callout"><p>연도별 표 합계</p><div class="hero-number">99<small>건</small></div><p>2022 ~ 2025.9</p></div></div><p class="small-note">2025년은 1–9월 34건. 인명피해 표 합계 122건과 범위가 달라 별도 표시합니다.</p><div class="split-bottom domestic-bottom"><section>${section('02','운행모드 구성')}${bars(figs[1].items,99,{compact:true})}<p class="small-note">자율주행모드 36/99건(36.4%).<br>모드별 위험도 비교와 구분.</p></section><section>${section('03','자율모드 사고 속도')}${bars(figs[2].items,36,{compact:true})}<p class="small-note">30 km/h 이하 31/36건(86.1%).<br>정지·주행 여부는 이 표만으로 구분 불가.</p></section></div></div>${insightBlock('domestic')}</div>`;
+ return slide(d.title,'운행모드 · 속도 · 시간대 · 날씨 | 공식 페이지 집계표',`집계 표기 · 2025.9`,body,'05',`출처: ${link(d.sourceUrl,d.source)} · 확인 ${d.checked}.<br>표별 분모 차이 보존 · 국내와 미국 SGO는 별도 집계.`);
 }
 
 function allFigures(){return renderFigures??=figureCatalog(state.model,state.filter);}
@@ -157,10 +158,10 @@ function figureMarkup(f){
  else if(f.kind==='stat')body=`<div class="figure-stat"><strong>${esc(f.value)}</strong><p>${esc(f.description)}</p></div>`;
  else if(f.kind==='case'&&f.analysis){const c=f.analysis;body=`<div class="case-content analysis-figure"><div class="case-diagram">${sceneSVG(f.record,state.pkg.sceneOverrides?.[f.record.id])}<p class="diagram-legend">청록: ADS · 회색: 접촉 대상<br>상대 위치·간격은 설명용 배치</p></div><div class="case-copy"><div class="case-meta">${esc(f.record.company)} · ${esc(f.record.month)} · ${esc(f.record.id)}</div><h4>보고된 사고 순서</h4><p>${esc(c.facts.join(' '))}</p><h4>확인할 문제 가능성</h4><p>${esc(c.vehicleHypotheses[0])}<br>${esc(c.environmentHypotheses[0])}</p><p class="analysis-export-note">필요 자료와 개선 방향은 사례 상세·CSV·PPTX 2페이지에서 확인</p></div></div>`;}
  else if(f.kind==='case')body=`<div class="case-content"><div class="case-diagram">${sceneSVG(f.record,state.pkg.sceneOverrides?.[f.record.id])}<div class="diagram-legend">청록: ADS 차량 · 회색: 상대 차량 · 주황: 접촉</div></div><div class="case-copy"><div class="case-meta">${esc(f.record.company)} · ${esc(f.record.month)} · ${esc(f.record.id)}</div><h4>사고 상황</h4><p>${esc(f.case.summary)}</p><h4>확인할 점</h4><p>${esc(f.case.caution)}</p></div></div>`;
- return `<article class="figure-sheet ${f.id==='state-severity'?'state-severity-sheet':''}"><header><h2>${esc(f.title)}</h2><p>${f.denominator!=null?`분모 ${num(f.denominator)}건 · `:''}${f.tab==='domestic'?'국내 공식 발표자료':esc(selectionLabel())}</p></header><div class="figure-insight">${esc(f.insight)}</div><div class="figure-body ${f.dense||f.items?.length>9||f.groups?.length>3?'dense':''}">${body}</div><footer>${esc(f.note||'차량별 사고보고 기준. 보고 구성비는 사고율·과실을 뜻하지 않습니다.')}<br>자료: ${f.tab==='domestic'?'한국교통안전공단 · 2025.11.28 발표':'NHTSA SGO ADS 제공 CSV 및 검수 기록'}</footer></article>`;
+ return `<article class="figure-sheet ${f.id==='state-severity'?'state-severity-sheet':''}"><header><h2>${esc(f.title)}</h2><p>${f.denominator!=null?`분모 ${num(f.denominator)}건 · `:''}${f.tab==='domestic'?'국내 공식 발표자료':esc(selectionLabel())}</p></header><div class="figure-insight">${esc(f.insight)}</div><div class="figure-body ${f.dense||f.items?.length>9||f.groups?.length>3?'dense':''}">${body}</div><footer>${esc(f.note||'차량별 사고보고 기준. 보고 구성비는 사고율·과실을 뜻하지 않습니다.')}<br>자료: ${f.tab==='domestic'?'사고조사위원회 공식 통계 · 2026.11.25 확인':'NHTSA SGO ADS 제공 CSV 및 검수 기록'}</footer></article>`;
 }
 function supportBase(tab){
-  if(tab==='domestic')return `<section class="support-panel"><h3>독립된 국내 공식 통계</h3><p>${esc(state.pkg.domestic.note)} ${link(state.pkg.domestic.sourceUrl,'공식 보도자료 확인 ↗')}</p></section>`;
+  if(tab==='domestic')return `<section class="support-panel"><h3>공식 자료·검산·해석 범위</h3><p>${link(DOMESTIC.sourceUrl,'사고조사위원회 공식 통계 ↗')} · 확인 ${DOMESTIC.checked}. 기존 112건 요약을 이 페이지 연도별 합계 99건으로 교체했습니다. 두 자료의 차이 원인은 공개 내용만으로 확인되지 않습니다.</p><p>연도·운행모드·시간대·월·계절·날씨·속도: 99건. 인명피해: 122건. 파손정도: 자율차 99건 / 상대차 88건. 피해 표를 99건에 맞춰 임의 보정하지 않습니다.</p><p>2025년 사고는 9월까지, 운행거리 주석은 6월 기준입니다. 거리당 사고값의 단위 표기도 서로 달라 모드별 사고율 순위를 제시하지 않습니다.</p><p>모드별 합계 대조 ${domesticAudit().filter(x=>x.ok).length}/6 통과. 표별 합계 차이는 오류를 숨기지 않고 아래 표시합니다.</p></section>${domesticFigures().slice(3).map(f=>`<section class="support-panel"><h3>${esc(f.title)}</h3><p>${esc(f.insight)}</p>${simpleTable(f.columns,f.rows.map(r=>r.map(esc)))}<p class="data-help">${esc(f.note)}</p></section>`).join('')}`;
   if(tab==='cases'){const rows=selected().filter(r=>['serious','fatal'].includes(r.severity));return `<section class="support-panel"><h3>선택 범위의 중상·사망 보고 ${num(rows.length)}건</h3><p>최고 피해수준의 원문 값을 유지했습니다. 같은 사고의 피해 인원을 뜻하지 않습니다.</p>${recordTable(rows)}</section>`;}
   if(tab==='overview'){
     const rows=selected(),a=aggregate(rows),years=[...new Set(rows.map(r=>r.month.slice(0,4)))].filter(Boolean).sort();
@@ -194,7 +195,7 @@ function dataPage(){
   return `<section class="support-panel" style="margin-top:0"><h3>CSV 업데이트</h3><p>정기 갱신: 매월 15일 확인 · 18일 재확인. 신규·수정 보고는 전체 경위와 양쪽 행동·접촉부위를 LLM으로 두 차례 대조하고 원문 근거·합계를 검증합니다. 사람의 검수 또는 과실 확정과는 구분합니다.</p><p><a href="automation/latest-run.json" target="_blank" rel="noopener noreferrer">최근 자동 실행·비용·표본 검산 기록</a> · <a href="https://github.com/dnf6541-max/ads-report-studio/actions/workflows/sgo-update.yml" target="_blank" rel="noopener noreferrer">연결 및 실행 상태</a></p><p>최신 양식과 이전 양식의 ADS CSV를 최대 2개 선택합니다. 양식에 따라 해당 파일만 교체하고 나머지는 유지합니다. 파일은 현재 브라우저에서 처리하며 서버로 업로드하지 않습니다.</p><div class="panel-actions" style="margin-top:16px"><button class="primary" data-action="upload">ADS CSV 선택</button><button data-action="restore">제공 원본으로 복원</button><button data-action="package">현재 데이터 패키지 저장</button></div><input type="file" id="csv-upload" accept=".csv,text/csv" multiple hidden><p class="data-help">새로 추가되거나 분석에 쓰는 값·경위 버전이 바뀐 사고는 기존 판정을 재사용하지 않고 재검토 대상으로 분리합니다. 화면 새로고침 시 사이트의 기본 데이터로 돌아갑니다. 영구 갱신은 검수표를 갱신한 데이터 패키지를 encode-package.mjs로 변환한 뒤 새 저장소에 배포하는 방식입니다.</p><div class="dataset-cards">${state.sources.map(s=>`<article class="dataset-card"><h4>${s.era==='current'?'최신 양식':'이전 양식'} · ${esc(s.name)}</h4><p>원본 기록 ${num(s.rows.length)}개 · ${esc(s.snapshot||'사용자 업데이트')}</p><code>SHA-256 ${esc(s.sha256)}</code></article>`).join('')}</div></section>
     <section class="support-panel"><h3>원자료에서 분석대상까지</h3><div class="flow-strip"><div><strong>${num(m.rawCount)}</strong>CSV 원본 기록</div><div><strong>${num(m.latest.size)}</strong>보고번호별 최신</div><div><strong>${num(m.records.length)}</strong>유효한 검수 대표 기록</div><div><strong>${num(m.ads.length)}</strong>ADS 시스템 비교 대상</div><div><strong>${num(m.impact.length)}</strong>사고 당시 ADS 확인</div></div><p class="data-help">비사고 정기보고 ${m.compliance}개 제외. 보고번호별 최대 버전 유지 → 검수된 동일 사고·차량 연결 적용 → ADS 시스템 구분 → 경위에 근거한 사고 시점 작동상태 분리. 재검토 필요 최신 보고 ${num(m.pending.length)}개는 확인된 분석대상에 포함하지 않습니다.</p></section>
     <section class="support-panel"><h3>분석 기준</h3><ol class="method-list"><li><b>선택 범위:</b> 기본값은 보고된 검수 대상(ADS 시스템 운행상태 비교 대상)입니다. 사고 당시 ADS 운행 확인만 선택할 수 있습니다. 선택은 미국 분석·인사이트·검산·내보내기에 함께 적용되며 국내 공식 통계는 별도입니다.</li><li><b>집계 단위:</b> 사고·차량별 대표 보고입니다. 하나의 물리적 사고에 여러 보고 차량이 있을 수 있으므로 고유 사고 건수·피해 인원과 동일하지 않습니다.</li><li><b>운행상태:</b> <code>Automation System Engaged?</code>, 양식별 <code>Engagement Status</code>, <code>Narrative</code>의 선후관계를 연결한 기존 검수 결과를 사용합니다. 보고 범위의 ‘충돌 전 30초’와 충돌 순간은 구분합니다.</li><li><b>주·야간:</b> 신고된 <code>Incident Time (24:00)</code> 기준 주간 06:00–17:59, 야간 18:00–05:59입니다. 시간대 변환이나 일출·일몰 계산을 하지 않습니다. 미기재·유효하지 않은 값은 불명입니다.</li><li><b>발생환경:</b> CSV의 실제 열 목록을 보존합니다. 최신 양식에는 Lighting·Roadway Surface 열이 없으므로 ‘양식에 열 없음’으로 구분합니다. 기상은 Weather 항목, 도로조건은 Roadway- 체크값과 이전 Roadway Description을 연결합니다. 체크값은 복수 가능하며 공란을 ‘없음’으로 해석하지 않습니다.</li><li><b>피해수준:</b> <code>Highest Injury Severity Alleged</code>를 사용합니다. 중상·사망은 Serious/Fatality, Moderate는 중등도로 별도 보존합니다. ‘부상 보고 없음’이 반드시 물적피해만 발생했다는 확정을 뜻하지는 않습니다.</li><li><b>자동차 상황:</b> 기존 검수표의 8가지 대표 상황과 그 외를 연결합니다. 움직임·접촉부위·사고 경위에 근거한 분류이며 키워드만으로 새 사고를 자동 확정하지 않습니다.</li><li><b>검수 결과 보호:</b> 연결 보고의 최신 분석 필드와 사용한 경위 버전의 SHA-256이 모두 일치해야 판정을 재사용합니다. 같은 사고·차량 식별자의 신규 보고가 추가되어도 기존 연결을 재검토합니다.</li><li><b>원문 접근:</b> 공개 보고 경위를 포함하되 불필요한 VIN 형식 문자열은 비식별 처리했습니다. 공식 조사 결론이나 법적 과실 비율을 산출하지 않습니다.</li></ol></section>
-    <section class="support-panel"><h3>출처와 한계</h3><p>${link(NHTSA,'NHTSA Standing General Order 사고보고 자료')} · 제공된 ADS CSV 2개와 기존 검수 기록을 사용합니다. 운행거리·운행시간 분모가 없어 회사별 사고율을 비교하지 않습니다. 수치는 보고 및 갱신 시점에 영향을 받습니다.<br><br>${link(state.pkg.domestic.sourceUrl,'국내 통계: 한국교통안전공단 공식 보도자료')} · 2025.11.28 발표. 국내 자료는 공식 발표 스냅샷이며 미국 CSV로 자동 갱신하지 않습니다.</p></section>`;
+    <section class="support-panel"><h3>출처와 한계</h3><p>${link(NHTSA,'NHTSA Standing General Order 사고보고 자료')} · 제공된 ADS CSV 2개와 기존 검수 기록을 사용합니다. 운행거리·운행시간 분모가 없어 회사별 사고율을 비교하지 않습니다. 수치는 보고 및 갱신 시점에 영향을 받습니다.<br><br>${link(state.pkg.domestic.sourceUrl,'국내 통계: 사고조사위원회 공식 통계')} · 2026.11.25 확인. 국내 자료는 공식 발표 스냅샷이며 미국 CSV로 자동 갱신하지 않습니다.</p></section>`;
 }
 
 function showRecord(id){
@@ -255,7 +256,7 @@ document.addEventListener('click',async e=>{
   else if(action==='review-audit')download(JSON.stringify({control:CONTROL_AUDIT,collision:COLLISION_AUDIT},null,2),'ADS_원문_분류_검토기록.json','application/json');
   else if(action==='audit-json')download(JSON.stringify({created:new Date().toISOString(),filter:state.filter,seed:state.seed,baseline:state.model.baseline,checks:checksForSelection(),sources:state.sources.map(({rows,...s})=>s),sample:sample(selected(),8,state.seed).map(exportRow)},null,2),exportName('검산')+'.json','application/json');
   else if(action==='upload')$('#csv-upload').click();
-  else if(action==='restore'){state.sources=state.pkg.sources;try{state.approvals=JSON.parse(localStorage.getItem(APPROVAL_KEY)||'[]');if(!Array.isArray(state.approvals))state.approvals=[];}catch{state.approvals=[];}await rebuildApproved();try{const saved=JSON.parse(localStorage.getItem('ads-scene-overrides-v1')||'{}');state.pkg.sceneOverrides=Object.fromEntries(Object.entries(saved).filter(([id,v])=>state.model.records.some(r=>r.id===id&&r.narrativeVersion===v.narrativeVersion&&v.sourceFingerprint===sourceFingerprint(r))));}catch{}render();notify('제공 원본으로 복원하고 유효한 사용자 승인을 다시 적용했습니다.');}
+  else if(action==='restore'){state.pkg.domestic=DOMESTIC;state.sources=state.pkg.sources;try{state.approvals=JSON.parse(localStorage.getItem(APPROVAL_KEY)||'[]');if(!Array.isArray(state.approvals))state.approvals=[];}catch{state.approvals=[];}await rebuildApproved();try{const saved=JSON.parse(localStorage.getItem('ads-scene-overrides-v1')||'{}');state.pkg.sceneOverrides=Object.fromEntries(Object.entries(saved).filter(([id,v])=>state.model.records.some(r=>r.id===id&&r.narrativeVersion===v.narrativeVersion&&v.sourceFingerprint===sourceFingerprint(r))));}catch{}render();notify('제공 원본으로 복원하고 유효한 사용자 승인을 다시 적용했습니다.');}
   else if(action==='package')await exportPackage();
   else if(action==='pending'){state.tab='records';state.scope='pending';state.query='';state.page=1;render();}
 });

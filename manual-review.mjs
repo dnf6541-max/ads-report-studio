@@ -1,4 +1,4 @@
-import {buildModel,canonical,sha256} from './analysis.mjs?v=20261125.25';
+import {buildModel,canonical,sha256} from './analysis.mjs?v=20261125.27';
 export const APPROVAL_KEY='ads-user-approvals-v1';
 const norm=s=>String(s||'').replace(/\s+/g,' ').trim();
 export async function createApproval(pkg,sources,id,input){
@@ -16,7 +16,7 @@ async function approvalFromModel(m,id,input){
  return {id,version:r.version,fingerprint:await sha256(canonical(r.raw)),decision:input.decision,reviewer:norm(input.reviewer),reason:norm(input.reason),quote,checked:true,approvedAt:new Date().toISOString(),revoked:false};
 }
 export async function applyApprovals(pkg,sources,history=[]){
- const base=await buildModel(pkg,sources),reviews=[...pkg.reviews],active=[],stale=[];
+ const base=await buildModel(pkg,sources),reviews=[...base.pkg.reviews],active=[],stale=[];
  const last=new Map(history.filter(x=>x&&typeof x.id==='string').map(x=>[x.id,x]));
  for(const a of last.values()){
   if(a.revoked)continue;const r=base.pending.find(r=>r.id===a.id);
@@ -28,6 +28,6 @@ export async function applyApprovals(pkg,sources,history=[]){
    const i=reviews.findIndex(g=>g.members.includes(a.id));if(i>=0)reviews.splice(i,1,g);else reviews.push(g);active.push(a);
   }catch{stale.push(a.id);}
  }
- const effective={...pkg,reviews,approvalHistory:history};const model=await buildModel(effective,sources);if(active.length)model.baseline=false;
+ const effective={...base.pkg,reviews,approvalHistory:history};const model=await buildModel(effective,sources);if(active.length)model.baseline=false;
  return {pkg:effective,model,active,stale};
 }

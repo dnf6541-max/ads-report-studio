@@ -1,15 +1,15 @@
-import {reconstructionPrimitives} from './reconstruction-diagram.mjs?v=20261125.25';
-import {CONTACT_POINTS,CONTACT_LABELS} from './contact-diagram.mjs?v=20261125.25';
-import {SCENARIO_SCHEMES} from './scenario-viz.mjs?v=20261125.25';
-import {placeSummary} from './environment.mjs?v=20261125.25';
-import {analysisRows,analysisBasis} from './analysis.mjs?v=20261125.25';
-import {contributionSummary,contributionInsights,compactContributionItems} from './contribution.mjs?v=20261125.25';
-import {sceneFor,locationInfo} from './scenes.mjs?v=20261125.25';
+import {reconstructionPrimitives} from './reconstruction-diagram.mjs?v=20261125.27';
+import {CONTACT_POINTS,CONTACT_LABELS} from './contact-diagram.mjs?v=20261125.27';
+import {SCENARIO_SCHEMES} from './scenario-viz.mjs?v=20261125.27';
+import {placeSummary} from './environment.mjs?v=20261125.27';
+import {analysisRows,analysisBasis} from './analysis.mjs?v=20261125.27';
+import {contributionSummary,contributionInsights,compactContributionItems} from './contribution.mjs?v=20261125.27';
+import {sceneFor,locationInfo} from './scenes.mjs?v=20261125.27';
 /* Editable PowerPoint export. Native charts include their Excel workbooks. */
-import {aggregate,filtered,pct,SEVERITY,CAR,VRU,countBy} from './analysis.mjs?v=20261125.25';
-import {figureCatalog,figureDataRows,transitionSummary,surfaceSummary} from './supplement.mjs?v=20261125.26';
+import {aggregate,filtered,pct,SEVERITY,CAR,VRU,countBy} from './analysis.mjs?v=20261125.27';
+import {figureCatalog,figureDataRows,transitionSummary,surfaceSummary} from './supplement.mjs?v=20261125.27';
 
-import {insightSummary} from './extended.mjs?v=20261125.25';
+import {insightSummary} from './extended.mjs?v=20261125.27';
 const C={navy:'193D50',teal:'148B82',blue:'277EAE',sky:'5AAAC8',amber:'D58A3B',muted:'637D8B',line:'D7E2E8',wash:'F3F7F9',grey:'83949E',white:'FFFFFF'};
 const palette=[C.teal,C.blue,C.sky,C.amber,C.grey,'B3C1C8'];
 const sevColor={none:C.teal,minor:'358EBC',moderate:'DF9F44',serious:'CB6A40',fatal:'AD4357',unknown:'B4BFC8'};
@@ -28,7 +28,7 @@ export function buildPptx(PptxGenJS,model,filter={},options={}) {
  const line=(s,x1,y1,x2,y2,color=C.line,width=.8,extra={})=>s.addShape(S.line,{x:Math.min(x1,x2),y:Math.min(y1,y2),w:Math.abs(x2-x1),h:Math.abs(y2-y1),flipH:x2<x1,flipV:y2<y1,line:{color,width,...extra}});
  const section=(s,n,title,x,y,w)=>{txt(s,n,x,y,.43,.32,20,{bold:true,color:C.blue});txt(s,title,x+.48,y,w-.48,.34,18,{bold:true});line(s,x,y+.43,x+w,y+.43);};
  const footer=(s,text,page)=>{line(s,.5,8.5,15.5,8.5);txt(s,text,.5,8.58,14.2,.3,9.5,{color:C.muted});txt(s,String(page).padStart(2,'0'),15,8.57,.5,.26,12,{bold:true,align:'right'});};
- const base=(title,sub,page,chip='',domestic=false)=>{const s=pptx.addSlide();s.background={color:C.white};rect(s,.5,.25,15,.055,C.navy);txt(s,title,.5,.47,13.1,.49,28,{bold:true});txt(s,sub,.5,1.04,14.5,.29,14,{color:C.muted});if(chip)txt(s,chip,12.25,.53,3.2,.3,11,{color:C.muted,align:'right'});footer(s,(domestic||title===names.domestic)?'출처: 한국교통안전공단 · 2025.11.28 발표 · 2025년 9월까지 · 미국 SGO와 별도':`자료: NHTSA SGO ADS 제공 자료 · ${period(filter)} · 차량별 사고보고 기준 · 사고율·법적 과실과 구분`,page);return s;};
+ const base=(title,sub,page,chip='',domestic=false)=>{const s=pptx.addSlide();s.background={color:C.white};rect(s,.5,.25,15,.055,C.navy);txt(s,title,.5,.47,13.1,.49,28,{bold:true});txt(s,sub,.5,1.04,14.5,.29,14,{color:C.muted});if(chip)txt(s,chip,12.25,.53,3.2,.3,11,{color:C.muted,align:'right'});footer(s,(domestic||title===names.domestic)?'출처: 사고조사위원회 공식 통계 · 2026.11.25 확인 · 2025년 9월까지 · 미국 SGO와 별도':`자료: NHTSA SGO ADS 제공 자료 · ${period(filter)} · 차량별 사고보고 기준 · 사고율·법적 과실과 구분`,page);return s;};
  const empty=(s,x=.6,y=2,w=10.3,h=4)=>{txt(s,'선택 범위에 확인된 사고가 없습니다',x,y,w,.5,24,{bold:true});txt(s,'기간·회사를 변경해 주세요. 자료가 없을 때 예시 수치를 채우지 않습니다.',x,y+.8,w,h-.8,16,{color:C.muted});};
  function bar(s,f,x,y,w,h,fs=13) {
    if(!f||!f.items.length||!f.items.some(v=>v.count)){txt(s,'해당 자료 없음',x,y+.2,w,.4,fs,{color:C.muted});return;}
@@ -48,7 +48,7 @@ export function buildPptx(PptxGenJS,model,filter={},options={}) {
    items.forEach(([head,body],i)=>{const y=2.37+i*1.42;txt(s,String(i+1).padStart(2,'0'),11.63,y,.36,.3,14,{bold:true,color:C.teal});txt(s,head,12.02,y,3.45,.37,17,{bold:true});txt(s,body,11.63,y+.45,3.85,.83,12.7,{color:C.muted,breakLine:false});line(s,11.63,y+1.25,15.5,y+1.25);});
    rect(s,11.63,7.25,3.87,.95,'EAF5F2');rect(s,11.63,7.25,.04,.95,C.teal);txt(s,note,11.8,7.38,3.5,.65,12.5,{color:C.muted});
  }
- function notes(s,used,extra='') {if(used.length&&used.every(f=>f.tab==='domestic')){s.addNotes(`자료: 한국교통안전공단 · 2025.11.28 발표\n범위: 2022~2025년 9월 공식 발표 스냅샷. 미국 필터와 별도.\n출처: ${model.pkg.domestic.sourceUrl}\n${used.map(f=>JSON.stringify({id:f.id,title:f.title,insight:f.insight,note:f.note,data:figureDataRows(f)})).join('\n')}`);return;}s.addNotes(`자료: NHTSA SGO ADS 제공 CSV와 기존 검수 기록\n범위: ${period(filter)}\n선택 분석대상: ${rows.length}건 / 이 중 ADS 운행 확인: ${rows.filter(r=>r.decision==='include').length}건\n단위: 차량별 사고보고. 사고율·과실·감소율을 의미하지 않음.\n${extra}\n${used.map(f=>JSON.stringify({id:f.id,title:f.title,insight:f.insight,note:f.note,data:figureDataRows(f)})).join('\n')}`);}
+ function notes(s,used,extra='') {if(used.length&&used.every(f=>f.tab==='domestic')){s.addNotes(`자료: 사고조사위원회 공식 통계 · 2026.11.25 확인\n범위: 2022~2025년 9월 공식 발표 스냅샷. 미국 필터와 별도.\n출처: ${model.pkg.domestic.sourceUrl}\n${used.map(f=>JSON.stringify({id:f.id,title:f.title,insight:f.insight,note:f.note,data:figureDataRows(f)})).join('\n')}`);return;}s.addNotes(`자료: NHTSA SGO ADS 제공 CSV와 기존 검수 기록\n범위: ${period(filter)}\n선택 분석대상: ${rows.length}건 / 이 중 ADS 운행 확인: ${rows.filter(r=>r.decision==='include').length}건\n단위: 차량별 사고보고. 사고율·과실·감소율을 의미하지 않음.\n${extra}\n${used.map(f=>JSON.stringify({id:f.id,title:f.title,insight:f.insight,note:f.note,data:figureDataRows(f)})).join('\n')}`);}
  // Requested accident diagrams use editable native PowerPoint objects.
  function nativeScene(s,r,x,y,w,h){
   h=Math.min(h,w*450/800);
@@ -120,8 +120,8 @@ export function buildPptx(PptxGenJS,model,filter={},options={}) {
    }else if(tab==='contribution'){
      const cs=contributionSummary(rows,filter),ii=contributionInsights(rows,filter);section(s,'01',cs.label+' · 상황 유형',.55,1.47,10.5);bar(s,{...byId.get('contribution-types'),items:compactContributionItems(cs.types)},.55,2,10.5,2.45,13);section(s,'02','최고 피해수준',.55,4.85,5.1);bar(s,byId.get('contribution-severity'),.55,5.4,5.1,2.6,11);section(s,'03','신고된 사고 상대',6,4.85,5.1);bar(s,{...byId.get('contribution-counterparts'),items:compactContributionItems(cs.counterparts,4)},6,5.4,5.1,2.6,10);txt(s,`${cs.label} ${cs.n}건 · 우선 ${cs.priority.length} / 확장 ${cs.broad.length}`,6.1,8.05,5,.25,10,{color:C.muted});insights(s,ii.title,ii.items,ii.note);notes(s,figures.filter(f=>f.tab===tab));
    }else {
-     section(s,'01','사고 신고 추이',.55,1.47,10.5);bar(s,byId.get('domestic-years'),.55,1.99,8.2,2.5,16);txt(s,'누적',9.05,2.45,1.75,.35,16,{color:C.muted,align:'center'});txt(s,'112건',8.87,2.95,2.1,.75,42,{bold:true,align:'center'});txt(s,'2022 ~ 2025.9',8.9,3.85,2.1,.3,12,{color:C.muted,align:'center'});txt(s,'2025년은 1–9월 집계. 전년도 연간 건수와 직접 비교 시 기간 차이에 유의.',.65,4.55,10.1,.35,12,{color:C.muted});
-     section(s,'02','자율주행모드 사고',.55,5.02,5.0);section(s,'03','사고 발생 속도',5.93,5.02,5.12);txt(s,'약 35%',.75,5.88,4.55,.7,44,{bold:true,color:C.teal,align:'center'});txt(s,'전체 신고 사고 중\n자율주행모드 운행 중 사고 비중',.85,6.8,4.4,.65,17,{align:'center'});txt(s,'30 km/h 이하',6.05,5.88,4.75,.75,32,{bold:true,color:C.teal,align:'center'});txt(s,'사고가 주로 발생한\n저속 구간에 대한 공식 발표 요약',6.12,6.8,4.65,.65,17,{align:'center'});
+     section(s,'01','사고 신고 추이',.55,1.47,10.5);bar(s,byId.get('domestic-years'),.55,1.99,8.2,2.5,16);txt(s,'누적',9.05,2.45,1.75,.35,16,{color:C.muted,align:'center'});txt(s,'99건',8.87,2.95,2.1,.75,42,{bold:true,align:'center'});txt(s,'2022 ~ 2025.9',8.9,3.85,2.1,.3,12,{color:C.muted,align:'center'});txt(s,'2025년은 1–9월 집계. 전년도 연간 건수와 직접 비교 시 기간 차이에 유의.',.65,4.55,10.1,.35,12,{color:C.muted});
+     section(s,'02','자율주행모드 사고',.55,5.02,5.0);section(s,'03','사고 발생 속도',5.93,5.02,5.12);txt(s,'36.4%',.75,5.88,4.55,.7,44,{bold:true,color:C.teal,align:'center'});txt(s,'자율주행모드 36 / 99건\n연도·운행모드 표 기준',.85,6.8,4.4,.65,17,{align:'center'});txt(s,'30 km/h 이하',6.05,5.88,4.75,.75,32,{bold:true,color:C.teal,align:'center'});txt(s,'자율주행모드 31 / 36건 (86.1%)\n피해 표 122건과 별도 집계',6.12,6.8,4.65,.65,17,{align:'center'});
      {const i=insightSummary(model,filter,'domestic');insights(s,i.title,i.items,i.note);}notes(s,figures.filter(f=>f.tab===tab),model.pkg.domestic.sourceUrl);
    }
  }

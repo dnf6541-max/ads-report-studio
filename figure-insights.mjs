@@ -1,4 +1,4 @@
-import {pct} from './analysis.mjs?v=20261125.25';
+import {pct} from './analysis.mjs?v=20261125.27';
 export function figureInsight(f){
  const item=k=>f.items?.find(x=>x.key===k),n=f.denominator||0;
  if(f.kind==='case'&&f.analysis)return `${f.record.id}: ${f.analysis.scene.stages.join(' → ')} · 원문 기반 검토 초안`;
@@ -19,7 +19,7 @@ export function figureInsight(f){
  if(f.id==='vru-movement')return '같은 취약도로이용자라도 ADS가 직진할 때와 회전·정지할 때 접촉 장면이 다릅니다. 아래 교차표는 어떤 행동 조합을 사례로 살펴볼지 보여줍니다.';
  if(f.id==='vru-environment')return '교차로 여부와 주야간을 함께 보면 횡단·회전 경로와 시간대가 겹치는 사례를 따로 검토할 수 있습니다.';
  if(f.id==='contribution-cases')return '지도 일관성·인지와 조향·부품 유지관리·충돌 후 대응은 서로 다른 문제입니다. 각 사례의 근거와 예방 가설을 별도로 연결했습니다.';
- if(f.id==='domestic-ads')return '전체 신고 사고에는 수동 등 다른 운행모드도 포함됩니다. 자율주행모드 약 35%라는 구성비와 해당 모드의 사고율은 다릅니다.';
+ if(f.id==='domestic-ads')return '전체 신고 사고에는 수동 등 다른 운행모드도 포함됩니다. 자율주행모드 36/99건(36.4%)이라는 구성비와 해당 모드의 사고율은 다릅니다.';
  if(f.id==='domestic-speed')return '저속 구간에서도 사고가 신고됐습니다. 정지·재출발·승하차와 같은 저속 운행 장면도 검토 대상이 됩니다.';
  return '보고된 항목을 함께 살펴보면서 개별 사고의 경위와 연결할 수 있습니다.';
 }

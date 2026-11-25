@@ -1,15 +1,16 @@
-import {caseAnalysisDataRow,reportCases} from './case-analysis.mjs?v=20261125.25';
-import {scenarioFigures} from './scenario-viz.mjs?v=20261125.25';
-import {placeSummary,placeGroup,placeAnnual} from './environment.mjs?v=20261125.25';
-import {analysisRows,analysisBasis} from './analysis.mjs?v=20261125.25';
-import {figureInsight} from './figure-insights.mjs?v=20261125.25';
-import {contributionFigures} from './contribution.mjs?v=20261125.25';
+import {domesticFigures} from './domestic-data.mjs?v=20261125.27';
+import {caseAnalysisDataRow,reportCases} from './case-analysis.mjs?v=20261125.27';
+import {scenarioFigures} from './scenario-viz.mjs?v=20261125.27';
+import {placeSummary,placeGroup,placeAnnual} from './environment.mjs?v=20261125.27';
+import {analysisRows,analysisBasis} from './analysis.mjs?v=20261125.27';
+import {figureInsight} from './figure-insights.mjs?v=20261125.27';
+import {contributionFigures} from './contribution.mjs?v=20261125.27';
 /* Additional evidence-based summaries. The original dataset/reviews are unchanged. */
-import {value,countBy,contactCounts,CAR,VRU,MOVEMENT,movementGroup,SEVERITY,DRIVER,LIGHTING,SCENARIOS,aggregate,filtered,pct} from './analysis.mjs?v=20261125.25';
+import {value,countBy,contactCounts,CAR,VRU,MOVEMENT,movementGroup,SEVERITY,DRIVER,LIGHTING,SCENARIOS,aggregate,filtered,pct} from './analysis.mjs?v=20261125.27';
 
-import {extendedFigures,controlSummary,controlEvidence,operatingStateSummary,OPERATING_NOTE} from './extended.mjs?v=20261125.25';
+import {extendedFigures,controlSummary,controlEvidence,operatingStateSummary,OPERATING_NOTE} from './extended.mjs?v=20261125.27';
 import {TIMING_CONTROL} from './review-data.mjs?v=20261124.10';
-import {environmentSummary,ROADWAY} from './environment.mjs?v=20261125.25';
+import {environmentSummary,ROADWAY} from './environment.mjs?v=20261125.27';
 export const TIMING_REVIEW=TIMING_CONTROL.records;
 const norm=s=>String(s||'').replace(/\s+/g,' ').trim();
 export function timingEvidence(r){
@@ -70,9 +71,7 @@ export function figureCatalog(model,filter={}) {
  table('vru-environment','vru','취약도로이용자 사고의 시간·장소',['시간','교차로','그 외 명시 장소','장소 미상·미기재'],[['day','주간'],['night','야간'],['unknown','시간 불명']].map(([k,label])=>[label,vru.filter(r=>r.time===k&&r.roadway==='Intersection').length,vru.filter(r=>r.time===k&&placeGroup(r)==='other_known').length,vru.filter(r=>r.time===k&&placeGroup(r)==='unavailable').length]),'주간 06:00–17:59 / 야간 18:00–05:59.'),
  chart('vru-contact','vru','취약도로이용자 사고의 ADS 접촉부위',contactCounts(vru),vru.length,'복수 부위 기재 가능. 합계가 사고 건수를 초과할 수 있음.'),
  chart('vru-severity','vru','취약도로이용자 사고의 피해수준',sev(vru),vru.length,'최고 피해수준 기준. Moderate를 중상에 포함하지 않음.'),
- chart('domestic-years','domestic','국내 자율주행차 사고 신고 추이',model.pkg.domestic.annual.map(x=>({label:x.year,count:x.count})),null,'한국교통안전공단 공식 발표. 2025년은 1–9월이며 이전 연도는 연간 집계.'),
- {id:'domestic-ads',tab:'domestic',title:'국내 자율주행모드 사고 비중',kind:'stat',value:'약 35%',description:'전체 신고 사고 중 자율주행모드 운행 중 사고의 비중',note:'공식 발표의 근삿값. 미국 SGO와 별도이며 정확한 건수로 환산하지 않음.'},
- {id:'domestic-speed',tab:'domestic',title:'국내 사고 발생 속도',kind:'stat',value:'30 km/h 이하',description:'사고가 주로 발생한 저속 구간에 대한 공식 발표 요약',note:'속도대별 상세 건수 미제공. 임의의 속도 분포를 만들지 않음.'},
+ ...domesticFigures(),
  ];
  const byId=new Map(rows.map(r=>[r.id,r]));
  for(const c of reportCases(rows,model.pkg.cases))if(byId.has(c.id)){const r=byId.get(c.id);figs.push({id:'case-'+r.id,tab:'cases',kind:'case',title:c.category,record:r,case:c,note:`보고 ${r.id} / 경위 v${r.narrativeVersion}. 원문을 요약한 개략도이며 법적 과실 판정이 아님.`});}

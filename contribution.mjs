@@ -1,6 +1,6 @@
-import {caseAnalysis,caseAnalysisStatus} from './case-analysis.mjs?v=20261125.25';
+import {caseAnalysis,caseAnalysisStatus} from './case-analysis.mjs?v=20261125.27';
 import data from './contribution-data.mjs?v=20261124.10';
-import {countBy,pct,SEVERITY,COUNTERPART} from './analysis.mjs?v=20261125.25';
+import {countBy,pct,SEVERITY,COUNTERPART} from './analysis.mjs?v=20261125.27';
 const byId=new Map(data.records.map(x=>[x.id,x]));
 const norm=s=>String(s||'').replace(/\s+/g,' ').trim();
 export const TIERS={explicit_ads_issue:'ADS 기능·사고 후 대응 명시',explicit_vehicle_hardware:'차량 부품 분리 명시',maneuver_contact_candidate:'기동·접촉 경위 확장 검토'};

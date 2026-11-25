@@ -1,8 +1,9 @@
-import {placeGroup} from './environment.mjs?v=20261125.25';
-import {analysisRows,analysisBasis} from './analysis.mjs?v=20261125.25';
+import {domesticInsights} from './domestic-data.mjs?v=20261125.27';
+import {placeGroup} from './environment.mjs?v=20261125.27';
+import {analysisRows,analysisBasis} from './analysis.mjs?v=20261125.27';
 /* Shared insight and evidence calculations for HTML, CSV and native PPTX. */
-import {CAR,VRU,COUNTERPART,SEVERITY,SCENARIOS,value,countBy,pct,aggregate,filtered} from './analysis.mjs?v=20261125.25';
-import {environmentSummary,environmentAudit,ROADWAY,COVERAGE} from './environment.mjs?v=20261125.25';
+import {CAR,VRU,COUNTERPART,SEVERITY,SCENARIOS,value,countBy,pct,aggregate,filtered} from './analysis.mjs?v=20261125.27';
+import {environmentSummary,environmentAudit,ROADWAY,COVERAGE} from './environment.mjs?v=20261125.27';
 import {CONTROL_REVIEW,CASE_REVIEW,COLLISION_REVIEW} from './review-data.mjs?v=20261124.10';
 export const CONTROL={on_board_transition:'차내 수동전환 확인',remote_direct:'원격 직접 제어 확인',manual_ongoing:'수동운행 · 전환 시점 불명',disengaged_stationary:'ADS 해제 후 정지',control_unclear:'해제·개입만 확인',unreviewed:'세부 검토 필요'};
 export const REASONS={external_traffic_hazard:'다른 이용자·장애물 대응',ads_behavior_system_issue:'ADS 행동·시스템 관련',odd_boundary:'ODD 이탈',planned_operational_manual_maneuver:'계획된 수동 조작',other_stated:'그 외 명시된 사유',not_specified:'전환 사유 미명시'};
@@ -61,7 +62,7 @@ export function insightSummary(model,filter={},tab='overview'){
   return {title:'취약도로이용자 사고 특징',note,items:[[top?`${COUNTERPART[top.key]} 상대가 가장 많음`:'선택 범위 자료 없음',top?`총 ${vr.length}건 중 ${share(top.count,vr.length)}. 보행자·자전거·이륜차·스쿠터를 원자료대로 구분합니다.`:'선택 범위에 해당 사고가 없습니다.'],['야간 교차로에서 발생한 사고',`${ni.length}건이며, 이 중 중상·사망 ${share(ni.filter(isHigh).length,ni.length)}입니다. 시간과 장소가 모두 확인된 조건으로 계산합니다.`],['중상·사망 사고 상대 구성',vh.rows.length?`총 ${vh.rows.length}건: ${vh.types.map(x=>`${x.label} ${x.count}건`).join(', ')}. 상대 유형별 전체 건수와 피해수준을 아래에서 함께 비교합니다.`:'선택 범위에 중상·사망 보고가 없습니다.']]};
  }
  if(tab==='cases')return {title:'중상·사망 사고의 구성',note,items:[['보고된 피해수준',`중상 ${high.serious}건, 사망 ${high.fatal}건. 선택한 ${analysisBasis(filter).label} ${n}건 중 ${share(high.rows.length,n)}입니다.`],['신고된 충돌 상대',types?`${types}. 상대 유형은 Crash With 원값입니다.`:'해당 보고가 없습니다.'],['접촉 순서와 피해자는 별도',`다른 차량과 먼저 충돌한 뒤 ADS에 접촉하는 경우도 있어, 각 사건의 첫 충돌·후속 접촉·피해 당사자를 원문과 함께 제공합니다.`]]};
- return {title:'국내 사고특성',note:'2025년은 1–9월 집계입니다. 운행대수·주행거리 정보가 없어 사고율 증가로 해석할 수 없습니다.',items:[['신고 건수의 변화','2022년 7건에서 2024년 31건. 2025년 1–9월에는 47건이 신고되어 누적 112건입니다.'],['자율주행모드 약 35%','전체 신고 사고에는 다른 운행모드도 포함됩니다. 약 35%가 자율주행모드 운행 중 발생했습니다.'],['저속 구간에서도 사고 발생','공식 발표는 주로 30 km/h 이하에서 사고가 발생했다고 설명합니다. 저속 운행 중 접촉 상황도 살펴볼 필요가 있습니다.']]};
+ return domesticInsights();
 }
 const bar=(id,tab,title,items,denominator,note='',extra={})=>({id,tab,title,kind:'bar',items,denominator,note,...extra});
 const table=(id,tab,title,columns,rows,note='',extra={})=>({id,tab,title,kind:'table',columns,rows,note,...extra});

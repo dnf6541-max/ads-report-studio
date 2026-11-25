@@ -1,9 +1,9 @@
-import legacySceneSources from './scene-source-data.mjs?v=20261125.25';
-import {caseAnalysis,sourceFingerprint} from './case-analysis.mjs?v=20261125.25';
-import {reconstructionSVG} from './reconstruction-diagram.mjs?v=20261125.25';
-import {contactScene,contactDiagramSVG} from './contact-diagram.mjs?v=20261125.25';
+import legacySceneSources from './scene-source-data.mjs?v=20261125.27';
+import {caseAnalysis,sourceFingerprint} from './case-analysis.mjs?v=20261125.27';
+import {reconstructionSVG} from './reconstruction-diagram.mjs?v=20261125.27';
+import {contactScene,contactDiagramSVG} from './contact-diagram.mjs?v=20261125.27';
 /* Editable scenario geometry. Coordinates describe the drawing, never GPS. */
-import {value,COUNTERPART} from './analysis.mjs?v=20261125.25';
+import {value,COUNTERPART} from './analysis.mjs?v=20261125.27';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const redacted=s=>!s||/\[|unknown|redact|personally|^n\/?a$/i.test(s);
 export function locationInfo(r,override={}){

@@ -1,4 +1,6 @@
-import {scenarioClassification,SCENARIO_PENDING_LABELS} from './scenario-review.mjs?v=20261125.25';
+import {DOMESTIC} from './domestic-data.mjs?v=20261125.27';
+import restorations from './review-restorations.mjs?v=20261125.27';
+import {scenarioClassification,SCENARIO_PENDING_LABELS} from './scenario-review.mjs?v=20261125.27';
 /* Deterministic SGO aggregation. Shared by the browser and Node verification. */
 export const STATUS = {include:'사고 당시 ADS 운행 확인',non_ads:'사고 당시 수동·원격·해제 상태',insufficient:'사고 당시 상태 확인 부족',conflict:'운행상태 자료 불일치',outside:'ADS 시스템 분석 밖',pending:'재검토 필요'};
 export const SEVERITY = {none:'부상 보고 없음',minor:'경상 (Minor)',moderate:'중등도 (Moderate)',serious:'중상 (Serious)',fatal:'사망 (Fatality)',unknown:'불명'};
@@ -58,6 +60,7 @@ export function canonical(raw){return JSON.stringify(Object.fromEntries(Object.k
 export async function sha256(s){const b=typeof s==='string'?new TextEncoder().encode(s):s;const h=await crypto.subtle.digest('SHA-256',b);return [...new Uint8Array(h)].map(x=>x.toString(16).padStart(2,'0')).join('');}
 const relation = raw => {const a=value(raw,'Same Incident ID'),b=value(raw,'Same Vehicle ID');return a&&b&&!/unknown|none|^n\/?a$/i.test(a+b)?`${a}|${b}`:'';};
 export async function buildModel(pkg,sources=pkg.sources) {
+  pkg={...pkg,domestic:DOMESTIC,reviews:pkg.reviews.map(g=>restorations.find(x=>x.id===g.id&&String(g.narrativeVersion)==='1'&&!g.userApproval)||g)};
   const latest=new Map(), versions=new Map(), rawSource=new Map(), sourceMeta=new Map(), duplicates=[];let rawCount=0,compliance=0;
   for(const s of sources)for(const raw of s.rows){
     rawCount++;
