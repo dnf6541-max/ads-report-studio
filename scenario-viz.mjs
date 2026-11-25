@@ -1,5 +1,5 @@
 /* Illustrative geometry of the eight definitions; not reconstructions of individual incidents. */
-import {SCENARIOS,pct,CAR} from './analysis.mjs?v=20261125.20';
+import {SCENARIOS,pct,CAR} from './analysis.mjs?v=20261125.23';
 export const SCENARIO_SCHEMES={
  '01':{sv:[430,110,0],cp:[430,235,0],arrows:[[430,210,430,165]],hit:[430,151],caption:'정지한 보고 차량의 뒤에 상대차가 직접 접촉'},
  '02':{sv:[430,110,0],cp:[430,235,0],arrows:[[430,210,430,165],[430,70,430,25]],hit:[430,151],caption:'주행·감속하는 보고 차량 뒤에 상대차가 직접 접촉'},

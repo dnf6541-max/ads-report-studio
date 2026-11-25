@@ -1,14 +1,15 @@
-import {scenarioFigures} from './scenario-viz.mjs?v=20261125.20';
-import {placeSummary,placeGroup,placeAnnual} from './environment.mjs?v=20261125.20';
-import {analysisRows,analysisBasis} from './analysis.mjs?v=20261125.20';
-import {figureInsight} from './figure-insights.mjs?v=20261125.20';
-import {contributionFigures} from './contribution.mjs?v=20261125.20';
+import {caseAnalysisDataRow} from './case-analysis.mjs?v=20261125.23';
+import {scenarioFigures} from './scenario-viz.mjs?v=20261125.23';
+import {placeSummary,placeGroup,placeAnnual} from './environment.mjs?v=20261125.23';
+import {analysisRows,analysisBasis} from './analysis.mjs?v=20261125.23';
+import {figureInsight} from './figure-insights.mjs?v=20261125.23';
+import {contributionFigures} from './contribution.mjs?v=20261125.23';
 /* Additional evidence-based summaries. The original dataset/reviews are unchanged. */
-import {value,countBy,contactCounts,CAR,VRU,MOVEMENT,movementGroup,SEVERITY,DRIVER,LIGHTING,SCENARIOS,aggregate,filtered,pct} from './analysis.mjs?v=20261125.20';
+import {value,countBy,contactCounts,CAR,VRU,MOVEMENT,movementGroup,SEVERITY,DRIVER,LIGHTING,SCENARIOS,aggregate,filtered,pct} from './analysis.mjs?v=20261125.23';
 
-import {extendedFigures,controlSummary,controlEvidence,operatingStateSummary,OPERATING_NOTE} from './extended.mjs?v=20261125.20';
+import {extendedFigures,controlSummary,controlEvidence,operatingStateSummary,OPERATING_NOTE} from './extended.mjs?v=20261125.23';
 import {TIMING_CONTROL} from './review-data.mjs?v=20261124.10';
-import {environmentSummary,ROADWAY} from './environment.mjs?v=20261125.20';
+import {environmentSummary,ROADWAY} from './environment.mjs?v=20261125.23';
 export const TIMING_REVIEW=TIMING_CONTROL.records;
 const norm=s=>String(s||'').replace(/\s+/g,' ').trim();
 export function timingEvidence(r){
@@ -82,7 +83,7 @@ function figureDataRowsCore(f) {
  if(f.kind==='bar')return f.items.map(x=>({항목:x.label||x.key,건수:x.count,분모:f.denominator??'',구성비:f.denominator==null?'':pct(x.count,f.denominator),기준:f.note}));
  if(f.kind==='table')return f.rows.map(r=>Object.fromEntries(f.columns.map((c,i)=>[c,r[i]])));
  if(f.kind==='grouped')return f.groups.flatMap(g=>g.items.map(x=>({운행상태:g.label,피해수준:x.label,건수:x.count,분모:g.total,구성비:pct(x.count,g.total)})));
- if(f.kind==='case')return [{보고번호:f.record.id,발생월:f.record.month,경위버전:f.record.narrativeVersion,설명:f.case.summary,근거:f.case.evidence,확인할점:f.case.caution}];
+ if(f.kind==='case')return [{...caseAnalysisDataRow(f.record),보고번호:f.record.id,발생월:f.record.month,경위버전:f.record.narrativeVersion,설명:f.case.summary,근거:f.case.evidence,확인할점:f.case.caution}];
  return [{항목:f.title,값:f.value,설명:f.description,기준:f.note}];
 }
 

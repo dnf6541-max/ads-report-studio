@@ -1,0 +1,291 @@
+{
+  "schemaVersion": 1,
+  "reviewedAtUtc": "2026-11-25T01:48:38.993329+00:00",
+  "scope": "Independent read-only review of case-analysis.mjs, reconstruction-diagram.mjs and scenes.mjs, with targeted app.mjs override persistence inspection; nine deterministic cases manually compared against complete Narrative and nonempty raw values. This is sampled content and code-level QA, not exhaustive 134-case review or final pixel/render QA.",
+  "sampleIDs": [
+    "13781-16672",
+    "35021-16694",
+    "30270-14514",
+    "30413-13249",
+    "30270-11888",
+    "13781-11687",
+    "30270-11003",
+    "30413-9958",
+    "30270-9569"
+  ],
+  "sampleChecks": [
+    {
+      "checks": [
+        "Full Narrative explicitly states parking-lot straight travel at up to 5 mph into a large water-filled pothole, with safety monitor and no passengers.",
+        "Raw Bottom contact and property-damage/no-injury-reported classification are represented without claiming a precise wheel or damaged component.",
+        "Facts, hypotheses, geometry questions and limitations distinguish reported water-filled hole from unproven drainage/maintenance fault."
+      ],
+      "result": "pass",
+      "followUp": "Final assembled snapshot should set waterFilled=true from explicit Narrative; root reported assembler supports this.",
+      "id": "13781-16672",
+      "narrativeVersion": "1",
+      "fullNarrativeRead": true,
+      "rawKnownValuesReviewed": true,
+      "exactEvidenceVerified": true,
+      "detailVersionMatches": true
+    },
+    {
+      "checks": [
+        "Full Narrative says eastbound-to-southbound right turn and rear passenger-side wheel curb contact; safety driver then manually stops and assesses.",
+        "Raw Rear Left contact conflicts with Narrative right-rear wheel; latest details explicitly preserve and explain this discrepancy.",
+        "Runtime primitive recheck after renderer change places target left-of-screen for downward-facing ADS, correctly representing vehicle-relative right."
+      ],
+      "result": "pass_after_fix",
+      "followUp": "Final rendered artifact remains to be inspected by root.",
+      "id": "35021-16694",
+      "narrativeVersion": "1",
+      "fullNarrativeRead": true,
+      "rawKnownValuesReviewed": true,
+      "exactEvidenceVerified": true,
+      "detailVersionMatches": true
+    },
+    {
+      "checks": [
+        "Full Narrative describes slowing and maneuvering right toward south curb, not a stated right turn.",
+        "Raw Lane / Road Departure agrees with lateral movement; raw Front Left contact conflicts with Narrative right-front tire and latest limits disclose that.",
+        "Initial right-motion renderer would have invented a right turn; latest details now set motion=unknown while stages/caption retain reported rightward movement."
+      ],
+      "result": "pass_after_fix",
+      "id": "30270-14514",
+      "narrativeVersion": "1",
+      "fullNarrativeRead": true,
+      "rawKnownValuesReviewed": true,
+      "exactEvidenceVerified": true,
+      "detailVersionMatches": true
+    },
+    {
+      "checks": [
+        "Read full reported mechanism: v29.0.20 lidar point cap, forward-edge filtering, track loss around 5 m, wrong mapped road edge, straight wall scrape at 2 m/s.",
+        "Details attribute mechanism and v32.0/map corrections to reporter and request independent effectiveness verification; do not turn them into new unsupported conclusions.",
+        "Raw Right+Bottom, rain/wet conditions do not prove road-management negligence; detail does not assert that.",
+        "Old legacy custom scene included a generic centerline; latest scenes code removes the centerline and source-binds legacy custom content."
+      ],
+      "result": "pass_after_fix",
+      "followUp": "Root retains special multi-event scenes; their final background setting and assembled fingerprint integration were not re-executed here.",
+      "id": "30413-13249",
+      "narrativeVersion": "1",
+      "fullNarrativeRead": true,
+      "rawKnownValuesReviewed": true,
+      "exactEvidenceVerified": true,
+      "detailVersionMatches": true
+    },
+    {
+      "checks": [
+        "Read complete two-contact sequence: U-turn over dividing curb, underbody contact and partial left rail-trim detachment, pickup wait of about five minutes then cancellation, later trim caught on rubber speed bump.",
+        "Details preserve ordered distinct contacts and do not invent left-versus-right U-turn direction.",
+        "Raw Bottom and 5 mph are supplementary; limits correctly request trim deformation, geometry and event spacing."
+      ],
+      "result": "pass",
+      "id": "30270-11888",
+      "narrativeVersion": "1",
+      "fullNarrativeRead": true,
+      "rawKnownValuesReviewed": true,
+      "exactEvidenceVerified": true,
+      "detailVersionMatches": true
+    },
+    {
+      "checks": [
+        "Read full version 3 correction: stopped center turn lane, clear opposing traffic, unprotected left into lot, chain contact; monitor plus one passenger; earlier airbag/tow entries expressly corrected.",
+        "Latest facts preserve corrected no-airbag/no-tow result.",
+        "Initial limitation treated contact area as absent despite raw Front Right; latest limitation explicitly states known front-right region and unknown exact chain contact geometry."
+      ],
+      "result": "pass_after_fix",
+      "id": "13781-11687",
+      "narrativeVersion": "3",
+      "fullNarrativeRead": true,
+      "rawKnownValuesReviewed": true,
+      "exactEvidenceVerified": true,
+      "detailVersionMatches": true
+    },
+    {
+      "checks": [
+        "Read complete Narrative: left-front wheel separation during westbound travel in intersection, then underside-pavement contact, reported passenger minor injury and tow.",
+        "Details preserve wheel separation before pavement contact; do not assign ADS software fault or the mechanism of reported minor injury.",
+        "Raw Bottom, 34 mph and Intersection support details; component-failure investigation requests are hypotheses rather than asserted failure modes."
+      ],
+      "result": "pass",
+      "followUp": "Retained legacy custom sequence should use reviewed intersection setting; root reported a setting-aware background update, final assembled integration not tested here.",
+      "id": "30270-11003",
+      "narrativeVersion": "1",
+      "fullNarrativeRead": true,
+      "rawKnownValuesReviewed": true,
+      "exactEvidenceVerified": true,
+      "detailVersionMatches": true
+    },
+    {
+      "checks": [
+        "Read full Narrative: first parking sub-lot curb, stop at main exit, second curb on road entry, rightward drift and sidewall rub, driver intervention, later manual-drive right-rear tire failure and low-pressure indicator.",
+        "Details attribute map-file incompatibility explanation to reporter; questions seek per-event contributions and damage accumulation.",
+        "Raw Right Turn, Rear Right and 7 mph do not contradict the represented event chain; late manual tire failure remains separate from ADS operation."
+      ],
+      "result": "pass",
+      "id": "30413-9958",
+      "narrativeVersion": "1",
+      "fullNarrativeRead": true,
+      "rawKnownValuesReviewed": true,
+      "exactEvidenceVerified": true,
+      "detailVersionMatches": true
+    },
+    {
+      "checks": [
+        "Read full Narrative and raw: eastbound right lane, motionless dog in travel lane, ADS engaged; raw precrash 30 mph and dark-lighted setting.",
+        "Details do not invent a darting animal or assign death/injury to this contact.",
+        "Raw Front Left is compatible with unspecified precise contact point; geometry questions seek exact location rather than deny the broad area."
+      ],
+      "result": "pass",
+      "id": "30270-9569",
+      "narrativeVersion": "1",
+      "fullNarrativeRead": true,
+      "rawKnownValuesReviewed": true,
+      "exactEvidenceVerified": true,
+      "detailVersionMatches": true
+    }
+  ],
+  "executableChecks": [
+    {
+      "name": "current source fingerprint",
+      "result": "pass",
+      "observed": "validateCaseAnalysis returned [] for a current 13781-16672 detail bound to current sourceFingerprint."
+    },
+    {
+      "name": "same-version Narrative mutation",
+      "result": "pass",
+      "observed": "Appending Narrative text returned 원문·변수 변경."
+    },
+    {
+      "name": "raw contact mutation",
+      "result": "pass",
+      "observed": "Changing SV Contact Area - Bottom returned 원문·변수 변경."
+    },
+    {
+      "name": "narrative version mutation",
+      "result": "pass",
+      "observed": "Changing narrativeVersion returned 원문·변수 변경."
+    },
+    {
+      "name": "invented evidence quote",
+      "result": "pass",
+      "observed": "Replacing evidence with 'made up' returned 원문 인용 불일치."
+    },
+    {
+      "name": "nine source evidence/version checks",
+      "result": "pass",
+      "observed": "All sampled evidence and scene evidence are exact contiguous source Narrative excerpts, and all detail versions match."
+    }
+  ],
+  "findings": [
+    {
+      "id": "QA-TURN-SIDE",
+      "severity": "medium",
+      "affectedIDs": [
+        "35021-16694"
+      ],
+      "status": "fixed_and_primitive_rechecked",
+      "finding": "Turning scene target placement originally ignored left/right relation and drew curb ahead. Latest primitive calculation correctly transforms the relative side by ADS heading."
+    },
+    {
+      "id": "QA-LATERAL-TURN",
+      "severity": "medium",
+      "affectedIDs": [
+        "30270-14514"
+      ],
+      "status": "fixed_and_detail_rechecked",
+      "finding": "A lateral rightward maneuver was encoded right and labeled 우회전. Latest detail motion=unknown avoids asserting an unstated right turn."
+    },
+    {
+      "id": "QA-POThole-WATER",
+      "severity": "medium",
+      "affectedIDs": [
+        "13781-16672",
+        "30270-14976",
+        "30270-16259",
+        "30412-5624"
+      ],
+      "status": "renderer_fix_observed_assembly_check_pending",
+      "finding": "Generic pothole painter originally invented water for every pothole. Latest painter uses scene.waterFilled and a neutral fill otherwise. Root reported source-based explicit-water flag assembly; final generated snapshot was not tested here."
+    },
+    {
+      "id": "QA-LEGACY-SOURCE-GUARD",
+      "severity": "high",
+      "affectedIDs": [
+        "30412-6144",
+        "30270-15547",
+        "30270-16196"
+      ],
+      "status": "code_fix_observed_final_integration_pending",
+      "finding": "Legacy custom scenes outside candidate snapshot were pending rather than stale and could survive source edits. Latest code compares legacySceneSources[id] with sourceFingerprint(r). Final source registry generation and mutation tests remain with root."
+    },
+    {
+      "id": "QA-OVERRIDE-SAME-VERSION",
+      "severity": "high",
+      "affectedIDs": [
+        "13781-16672"
+      ],
+      "status": "code_fix_observed_final_integration_pending",
+      "finding": "Saved scene geometry/context previously checked narrativeVersion only. Latest app saves/restores sourceFingerprint and scenes rejects mismatched fingerprint for version-bound overrides. Final browser restore test not performed."
+    },
+    {
+      "id": "QA-KNOWN-CONTACT-LIMIT",
+      "severity": "medium",
+      "affectedIDs": [
+        "13781-11687"
+      ],
+      "status": "fixed_and_detail_rechecked",
+      "finding": "Raw Front Right was known despite initial generic contact-area absence language. Latest limit names known front-right region and unknown exact point/height/path."
+    },
+    {
+      "id": "QA-LEGACY-LAYOUT",
+      "severity": "medium",
+      "affectedIDs": [
+        "30413-13249",
+        "30270-11003",
+        "30413-9958"
+      ],
+      "status": "centerline_removal_observed_setting_integration_pending",
+      "finding": "Old custom layouts took priority over reviewed reconstruction and added generic centerline/road layout. Latest renderer removes centerline. Root reported using reviewed setting while preserving special multi-event paths; final integrated scene was not rechecked here."
+    },
+    {
+      "id": "QA-COUNTERPART-ORIENTATION",
+      "severity": "medium",
+      "affectedIDs": [
+        "30270-16038"
+      ],
+      "status": "reported_to_root_open_at_review",
+      "finding": "reconstructionPrimitives targetKind=vehicle always draws a right-facing horizontal vehicle, which invents counterpart heading. Narrative30270-16038 explicitly says parked passenger car perpendicular to roadway/ADS travel. Use neutral unoriented counterpart shape unless heading is source-backed. This is a supplemental code/content spot-check outside the nine formal sample IDs."
+    }
+  ],
+  "coverageLimits": [
+    "No claim of complete 134-case manual independent coverage.",
+    "No browser screenshot or PDF/PPTX pixel-level inspection performed in this QA task.",
+    "Compiled case-analysis-data.mjs was still a placeholder during executable guard tests; tests bound an available sampled detail to sourceFingerprint directly. Root will run assembled-snapshot integration and stale-source tests.",
+    "Source/detail files were being finalized concurrently; fixed statuses distinguish personally re-read changes from root-reported assembly updates."
+  ],
+  "finalVerification": {
+    "date": "2026-11-25",
+    "caseCount": 134,
+    "sourceAndSchemaValidated": 134,
+    "sourceEditsHideStaleAnalysis": true,
+    "unitTestsPassed": 67,
+    "runtimeChecksPerBasis": 69,
+    "sampledManualCases": 9,
+    "visualChecks": [
+      "13781-16672 상황도·2페이지PPTX",
+      "35021-16694 차량 기준 우측 연석 상황도"
+    ],
+    "resolutions": [
+      "회전 시 차량 기준 좌우 배치 수정",
+      "단순 우측 이동을 우회전으로 표시하지 않음",
+      "명시된 포트홀만 물 고임을 표현",
+      "상대차 방향 미확인은 방향 없는 표식으로 표현",
+      "기존 복합 장면·저장 사용자 편집도 전체 출처 식별값 대조",
+      "신고된 하부·전면 우측 접촉과 미확인 세부 형상을 구분",
+      "복합 접촉 장면을 유지하되 미확인 중앙선·차로 표식 제거"
+    ],
+    "limitations": "전수 AI 보조 초안 + 별도9건 표본 재확인. 실제 원인·법적 과실·대책 효과를 확정하지 않음."
+  }
+}

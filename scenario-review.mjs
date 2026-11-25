@@ -1,5 +1,5 @@
 /* Version-bound, full narrative × movement × contact-area recheck. */
-import reviewData from './scenario-data.mjs?v=20261125.20';
+import reviewData from './scenario-data.mjs?v=20261125.23';
 export const SCENARIO_REVIEW_STATUS={confirmed:'대조 확인',conflict:'자료 상충',insufficient:'근거 부족',unreviewed:'미검토·재검토'};
 export const SCENARIO_PENDING_LABELS={C:'자료 상충 · 미확정',I:'근거 부족 · 미확정',U:'미검토·재검토'};
 const index=new Map(reviewData.records.map(r=>[r.id,r]));

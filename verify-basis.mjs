@@ -1,15 +1,15 @@
-import {scenarioEvidence,scenarioReviewAudit} from './scenario-review.mjs?v=20261125.20';
+import {scenarioEvidence,scenarioReviewAudit} from './scenario-review.mjs?v=20261125.23';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import zlib from 'node:zlib';
 import PptxGenJS from 'pptxgenjs';
 import JSZip from 'jszip';
 import encoded from './data-base64.mjs?v=20261124.10';
-import {buildModel,analysisRows,analysisBasis,aggregate,audit,sample,CAR,VRU,scenarioKey,csvExport,parseCSV} from './analysis.mjs?v=20261125.20';
-import {figureCatalog,figureDataRows,extraAudit} from './supplement.mjs?v=20261125.20';
-import {extendedAudit,insightSummary,controlSummary} from './extended.mjs?v=20261125.20';
-import {contributionAudit,contributionSummary} from './contribution.mjs?v=20261125.20';
-import {buildPptx} from './export-pptx.mjs?v=20261125.20';
+import {buildModel,analysisRows,analysisBasis,aggregate,audit,sample,CAR,VRU,scenarioKey,csvExport,parseCSV} from './analysis.mjs?v=20261125.23';
+import {figureCatalog,figureDataRows,extraAudit} from './supplement.mjs?v=20261125.23';
+import {extendedAudit,insightSummary,controlSummary} from './extended.mjs?v=20261125.23';
+import {contributionAudit,contributionSummary} from './contribution.mjs?v=20261125.23';
+import {buildPptx} from './export-pptx.mjs?v=20261125.23';
 const pkg=JSON.parse(zlib.gunzipSync(Buffer.from(encoded,'base64'))),m=await buildModel(pkg);
 const catalog=basis=>figureCatalog(m,{basis});
 const fig=(list,id)=>list.find(f=>f.id===id);
@@ -58,7 +58,7 @@ test('all figures, status comparisons, insights and CSV metadata follow the sele
   assert.ok(insightSummary(m,{basis},'cases').items[0][1].includes(`${n}건`));
   assert.ok(fs.every(f=>f.insight&&f.basis===(f.tab==='domestic'?'domestic':basis)));
   const checks=[...audit(m,rows),...extraAudit(m,rows,rows),...extendedAudit(m,rows,rows),...contributionAudit(m,rows),...scenarioReviewAudit(rows)];
-  assert.equal(checks.length,67);assert.ok(checks.every(x=>x.ok),JSON.stringify(checks.filter(x=>!x.ok)));
+  assert.equal(checks.length,69);assert.ok(checks.every(x=>x.ok),JSON.stringify(checks.filter(x=>!x.ok)));
   assert.ok(sample(rows,20).every(r=>rows.includes(r)));assert.equal(contributionSummary(rows).details.length,134);
  }
  const a=catalog('reported'),b=catalog('confirmed');assert.deepEqual(a.filter(f=>f.tab==='domestic'),b.filter(f=>f.tab==='domestic'));

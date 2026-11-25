@@ -1,6 +1,7 @@
-import {pct} from './analysis.mjs?v=20261125.20';
+import {pct} from './analysis.mjs?v=20261125.23';
 export function figureInsight(f){
  const item=k=>f.items?.find(x=>x.key===k),n=f.denominator||0;
+ if(f.kind==='case'&&f.analysis)return `${f.record.id}: ${f.analysis.scene.stages.join(' → ')} · 원문 기반 검토 초안`;
  if(f.kind==='case')return `${f.record.id}: ${f.case.summary}`;
  if(f.kind==='bar'){
   const sorted=[...f.items].filter(x=>x.count).sort((a,b)=>b.count-a.count),top=sorted[0];if(!top)return '선택 범위에서 이 항목에 해당하는 신고가 없습니다.';

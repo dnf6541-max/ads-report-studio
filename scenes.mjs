@@ -1,6 +1,9 @@
-import {contactScene,contactDiagramSVG} from './contact-diagram.mjs?v=20261125.20';
+import legacySceneSources from './scene-source-data.mjs?v=20261125.23';
+import {caseAnalysis,sourceFingerprint} from './case-analysis.mjs?v=20261125.23';
+import {reconstructionSVG} from './reconstruction-diagram.mjs?v=20261125.23';
+import {contactScene,contactDiagramSVG} from './contact-diagram.mjs?v=20261125.23';
 /* Editable scenario geometry. Coordinates describe the drawing, never GPS. */
-import {value,COUNTERPART} from './analysis.mjs?v=20261125.20';
+import {value,COUNTERPART} from './analysis.mjs?v=20261125.23';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const redacted=s=>!s||/\[|unknown|redact|personally|^n\/?a$/i.test(s);
 export function locationInfo(r,override={}){
@@ -32,9 +35,10 @@ const CASE_SCENES={
  '30270-7681':{layout:'street',ads:[480,160,0],cp:[445,310,0],paths:[[445,390,450,215],[440,205,380,140]],hits:[[450,210]],context:'뒤차가 ADS 좌후부 접촉 뒤 중앙분리대 쪽으로 이동'},
 };
 export function sceneFor(r,override={}){
- const base=CASE_SCENES[r.id]||contactScene(r);
+ const analysis=caseAnalysis(r);const custom=legacySceneSources[r.id]===sourceFingerprint(r)?CASE_SCENES[r.id]:null;if(Object.keys(override).length&&override.narrativeVersion&&(String(override.narrativeVersion)!==String(r.narrativeVersion)||override.sourceFingerprint!==sourceFingerprint(r)))override={};const base=custom||(analysis?{...contactScene(r),layout:'reconstruction',reconstruction:analysis.scene,context:analysis.scene.caption}:contactScene(r));
  const labels={'30270-16196':['SUV','보행자'],'30270-16028':['상대 승용차','보행자'],'30270-15830':['유턴 차량','자전거'],'30412-6395':['선행 충격 차량','보행자'],'30270-6579':['상대 승용차','관련 대상'],'30270-15896':['SUV','시설물'],'30270-9724':['SUV','대기 차량'],'30270-8968':['중앙선 침범차','SUV'],'30270-11713':['이륜차','승용차']};const names=labels[r.id];const scene={...contactScene(r),...base,...(names?{cpLabel:names[0],thirdLabel:names[1]}:{}),...override};
- if(!['street','intersection','parking','sequence','contact'].includes(scene.layout)||scene.layout==='sequence'&&!base.sequence)scene.layout=base.layout;
+ if(custom&&analysis&&scene.layout!=='sequence'&&!override.layout)scene.layout=({parking:'parking',intersection:'intersection',road:'street',unknown:'street'})[analysis.scene.setting];
+ if(!['street','intersection','parking','sequence','contact','reconstruction'].includes(scene.layout)||scene.layout==='sequence'&&!base.sequence)scene.layout=base.layout;
  const pos=(p,def)=>Array.isArray(p)&&p.length===3&&p.every(x=>Number.isFinite(+x))?[Math.max(50,Math.min(750,+p[0])),Math.max(60,Math.min(380,+p[1])),+p[2]%360]:def;
  scene.ads=pos(scene.ads,base.ads);scene.cp=pos(scene.cp,base.cp);scene.third=scene.third?pos(scene.third,base.third||[300,300,0]):null;
  scene.cpLabel=scene.cpLabel||COUNTERPART[r.counterpart]||r.counterpart||'상대';
@@ -43,11 +47,12 @@ export function sceneFor(r,override={}){
 }
 export function sceneSVG(r,override={}){
  const s=sceneFor(r,override),l=locationInfo(r,override);
+ if(s.layout==='reconstruction'&&s.reconstruction)return reconstructionSVG({...s.reconstruction,caption:s.context});
  if(s.layout==='contact')return contactDiagramSVG(r,s);
  if(s.layout==='sequence')return sequenceSVG(r,s,l);
  const line=(a,b,c,d,col='#fff',width=3,dash='')=>`<line x1="${a}" y1="${b}" x2="${c}" y2="${d}" stroke="${col}" stroke-width="${width}" ${dash?`stroke-dasharray="${dash}"`:''}/>`;
  const actor=(p,label,color)=>{const [x,y,angle]=p;if(/보행자|자전거|이륜차|시설물|관련 대상|옹벽|연석|바퀴|노면/.test(label))return `<circle cx="${x}" cy="${y}" r="30" fill="white" stroke="${color}" stroke-width="4"/><text x="${x}" y="${y+5}" text-anchor="middle" font-size="14" font-weight="700" fill="${color}">${esc(label)}</text>`;return `<g transform="translate(${x} ${y}) rotate(${angle})"><rect x="-28" y="-48" width="56" height="96" rx="13" fill="${color}"/><rect x="-21" y="-33" width="42" height="20" rx="5" fill="#d8e7ed"/><rect x="-21" y="26" width="42" height="12" rx="4" fill="#bcced5"/></g><rect x="${x-62}" y="${y-13}" width="124" height="26" rx="8" fill="white" opacity=".95"/><text x="${x}" y="${y+6}" text-anchor="middle" font-size="17" font-weight="700" fill="${color}">${esc(label)}</text>`;};
- const road=s.layout==='intersection'?`<rect x="235" y="25" width="330" height="365" fill="#dce5e9"/><rect x="70" y="160" width="660" height="155" fill="#dce5e9"/>${line(400,25,400,154,'#bdac65',4)}${line(400,320,400,390,'#bdac65',4)}${line(70,238,228,238,'#bdac65',4)}${line(570,238,730,238,'#bdac65',4)}`:`<rect x="235" y="25" width="330" height="365" fill="#dce5e9"/>${line(400,25,400,390,'#bdac65',4)}${line(245,25,245,390)}${line(555,25,555,390)}${s.layout==='parking'?'<rect x="565" y="80" width="150" height="110" fill="none" stroke="#8fa4ae" stroke-width="3"/>':''}`;
+ const road=s.layout==='intersection'?`<rect x="235" y="25" width="330" height="365" fill="#dce5e9"/><rect x="70" y="160" width="660" height="155" fill="#dce5e9"/>`:`<rect x="235" y="25" width="330" height="365" fill="#dce5e9"/>${s.layout==='parking'?'<rect x="565" y="80" width="150" height="110" fill="none" stroke="#8fa4ae" stroke-width="3"/>':''}`;
  const arrows=s.paths.map(([a,b,c,d])=>{const t=Math.atan2(d-b,c-a),u=c-13*Math.cos(t),v=d-13*Math.sin(t),dx=6*Math.sin(t),dy=6*Math.cos(t);return `${line(a,b,c,d,'#c8863c',4)}<polygon points="${c},${d} ${u+dx},${v-dy} ${u-dx},${v+dy}" fill="#c8863c"/>`;}).join('');
  const objects=(s.objects||[]).map(o=>`<rect x="${o.x}" y="${o.y}" width="${o.w}" height="${o.h}" rx="5" fill="#adbcc5"/><text x="${o.x+o.w/2}" y="${o.y-8}" text-anchor="middle" font-size="14" fill="#526d7c">${esc(o.label)}</text>`).join('');
  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" role="img" aria-label="${esc(s.context)}"><rect width="800" height="450" fill="#f4f7f9"/>${road}${objects}${arrows}${actor(s.ads,'ADS','#147e79')}${actor(s.cp,s.cpLabel,'#607886')}${s.third?actor(s.third,s.thirdLabel||'관련 대상','#8899a2'):''}${s.hits.map((p,i)=>`<circle cx="${p[0]}" cy="${p[1]}" r="13" fill="#d0893b" stroke="white" stroke-width="3"/><text x="${p[0]}" y="${p[1]+5}" text-anchor="middle" font-size="15" font-weight="bold" fill="white">${i+1}</text>`).join('')}<text x="20" y="416" font-size="14" fill="#244959">${esc(s.context)}</text><text x="20" y="441" font-size="12" fill="#68818b">${esc(s.basis)} | ${esc(l.city+' '+l.state)} · ${esc(l.level)}</text></svg>`;

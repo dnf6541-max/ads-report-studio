@@ -74,3 +74,18 @@
 .state-severity-sheet .figure-body .figure-group{margin-bottom:10px}.state-severity-sheet .figure-group h3{font-size:17px;margin-bottom:4px}.state-severity-sheet .figure-body .stackbar{height:22px}.state-severity-sheet .stackseg{font-size:13px}.state-severity-values{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.3}.state-severity-sheet>footer{font-size:12px}
 .state-severity-sheet .figure-body.dense .figure-group h3{font-size:17px;line-height:1.2;margin-bottom:3px}
 .state-severity-sheet .figure-body.dense .figure-group{margin-bottom:7px}
+/* Case-specific review, facts and hypotheses remain visually separate. */
+.case-analysis-detail{margin-top:18px;font-size:16px;line-height:1.7}
+.case-analysis-detail h4{margin:22px 0 9px;font-size:17px}.case-analysis-detail h5{margin:0 0 9px;font-size:16px}
+.case-analysis-detail ul,.case-analysis-detail ol{padding-left:23px;margin:9px 0 15px}.case-analysis-detail li{margin:7px 0}
+.case-analysis-detail .analysis-draft-label{font-size:14px;color:#527780;border-left:3px solid #148b82;padding:8px 12px;background:#edf6f5}
+.analysis-hypotheses{display:grid;grid-template-columns:1fr;gap:12px}.analysis-hypotheses section{background:#f3f7f9;padding:4px 16px 12px}
+.analysis-improvements{display:grid;grid-template-columns:1fr;gap:12px}.analysis-improvements section{background:#f0f7f5;border:1px solid #d4e5e0;padding:14px}
+.case-analysis-detail .table-scroll td,.case-analysis-detail .table-scroll th{white-space:normal;min-width:150px;font-size:15px;line-height:1.65}
+.case-analysis-detail blockquote{white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px;background:#f5f8f9;margin:15px 0;padding:16px}
+.analysis-limits{padding:12px 14px;border-left:3px solid #d58a3b;background:#fff7ed;font-size:14px!important}
+.case-analysis-expand{border-top:1px solid #d7e2e8;margin-top:16px;padding-top:16px}
+.case-analysis-expand>summary{font-size:15px;line-height:1.7}
+.dialog-content .analysis-hypotheses{grid-template-columns:repeat(2,minmax(0,1fr))}.dialog-content .analysis-improvements{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media(max-width:700px){.dialog-content .analysis-hypotheses,.dialog-content .analysis-improvements{grid-template-columns:1fr}}
+.figure-sheet .analysis-figure .case-copy h4{font-size:20px;margin:11px 0 8px}.figure-sheet .analysis-figure .case-copy p{font-size:17px;line-height:1.5}.figure-sheet .analysis-figure .analysis-export-note{font-size:13px;color:#637d8b;margin-top:13px}.figure-sheet .analysis-figure .case-diagram svg{height:auto;margin-top:15px}
