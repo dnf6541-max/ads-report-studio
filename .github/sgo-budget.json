@@ -10,6 +10,12 @@
       "calls": 1,
       "unknownCharge": false,
       "finishedAt": "2026-11-25T02:26:05.354Z"
+    },
+    {
+      "runId": "45532992376",
+      "createdAt": "2026-11-25T02:26:56.010Z",
+      "reservedUSD": 20,
+      "settled": false
     }
   ]
 }
