@@ -1,5 +1,5 @@
 /* Preserve schema differences: a field absent from the form is not Unknown. */
-import {value,countBy} from './analysis.mjs?v=20261125.24';
+import {value,countBy} from './analysis.mjs?v=20261125.25';
 export const ENV_SOURCES={current:'https://static.nhtsa.gov/odi/ffdd/sgo-2021-01/SGO-2021-01_Data_Element_Definitions.pdf',archive:'https://static.nhtsa.gov/odi/ffdd/sgo-2021-01/Archive-2021-2025/SGO-2021-01_Data_Element_Definitions.pdf'};
 export const ROAD={normal:'특이조건 없음',wet:'젖은 노면 신고',degraded:'노면 손상',marking:'차선 표시 손상·누락',work:'공사구간',traffic:'선행 교통사고·장애',other:'기타 도로조건',unknown:'미상 신고'};
 const ROAD_FIELDS={normal:'Roadway-No Unusual Conditions',wet:'Roadway-Wet Surface Condition',degraded:'Roadway-Degraded Surface',marking:'Roadway-Missing/Degraded Marking',work:'Roadway-Work Zone',traffic:'Roadway-Traffic Incident',other:'Roadway-Other-See Narrative',unknown:'Roadway-Unknown'};

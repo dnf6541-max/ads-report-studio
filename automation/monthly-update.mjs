@@ -77,11 +77,12 @@ async function main(){
   calls++;let response,json;
   try{response=await fetch('https://api.openai.com/v1/responses',{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${process.env.OPENAI_API_KEY}`},body:JSON.stringify(body),signal:AbortSignal.timeout(600000)});json=await response.json();}
   catch{chargedUSD+=upper;unknownCharge=true;throw new Error('API response unavailable; reserved maximum retained, no automatic retry');}
-  if(!response.ok){throw new Error(`OpenAI HTTP ${response.status}; check project balance/model access in the API dashboard`);}
+  if(!response.ok){const code=String(json.error?.code||json.error?.type||'unknown').replace(/[^a-zA-Z0-9_.-]/g,'').slice(0,80);throw new Error(`OpenAI HTTP ${response.status} (${code}); check project balance/model access in the API dashboard`);}
   if(!Number.isFinite(json.usage?.input_tokens)||!Number.isFinite(json.usage?.output_tokens)){chargedUSD+=upper;unknownCharge=true;throw new Error('Missing API usage; maximum retained');}
   // Count cached input at full input price, conservatively; includes all reasoning output.
   const cost=(json.usage.input_tokens*config.standardInputPerMillionUSD+json.usage.output_tokens*config.standardOutputPerMillionUSD)/1e6;
   chargedUSD+=cost;usage.push({responseId:json.id,inputTokens:json.usage.input_tokens,outputTokens:json.usage.output_tokens,reasoningTokens:json.usage.output_tokens_details?.reasoning_tokens??null,conservativeUSD:cost});
+  console.log(JSON.stringify({event:'api_response',call:calls,inputTokens:json.usage.input_tokens,outputTokens:json.usage.output_tokens,conservativeUSD:Number(chargedUSD.toFixed(6))}));
   if(json.status!=='completed')throw new Error('API output incomplete; do not publish partial analysis');
   const text=(json.output||[]).flatMap(x=>x.content||[]).filter(x=>x.type==='output_text').map(x=>x.text).join('');
   return JSON.parse(text);
@@ -99,6 +100,7 @@ async function main(){
    const queue=[...new Map(model.pending.map(r=>[r.id,r])).values()].sort((a,b)=>Number(['fatal','serious'].includes(b.severity))-Number(['fatal','serious'].includes(a.severity))||a.id.localeCompare(b.id));
    const requested=new Set([...delta.added,...delta.changed,...queue.map(r=>r.id)]);
    for(const r of queue.slice(0,mode==='pilot'?10:config.maxRecordsPerRun)){
+    console.log(JSON.stringify({event:'review_start',id:r.id,mode}));
     if(!eligibleSingleton(r.raw,pkg,model.latest)){report.held.push({id:r.id,reason:'Multiple related reports: preserve linkage for explicit review'});continue;}
     if(!norm(r.raw.Narrative)||/^\[?redacted|^confidential|^\[?cbi\]?$/i.test(norm(r.raw.Narrative))){report.held.push({id:r.id,reason:'No usable Narrative'});continue;}
     try{
@@ -107,6 +109,7 @@ async function main(){
      const check=await callLLM({report:r.raw,proposed:d},reviewSchema,instructions+'\nPerform a separate critical verification of the proposed analysis against the complete source. Accept only if EVERY factual assertion, control chronology, scenario/contact comparison, candidate tier, and diagram is supported or explicitly uncertain. An exact quote alone is not enough if interpretation is wrong. Return accepted false with issues when unsupported. Quote source evidence. Do not rewrite the draft.');
      if(!check.accepted||check.issues.length){report.held.push({id:r.id,reason:'Second-pass issues',issues:check.issues});continue;}
      const g=await toReview(d,r.raw,check,config.model,runId);next.reviews=next.reviews.filter(x=>!x.members.includes(r.id));next.reviews.push(g);report.accepted.push(r.id);
+     console.log(JSON.stringify({event:'review_accepted',id:r.id,accepted:report.accepted.length,held:report.held.length}));
     }catch(e){report.held.push({id:r.id,reason:e.message});if(e.message==='RUN_BUDGET_REACHED'||unknownCharge||/^OpenAI HTTP/.test(e.message))break;}
    }
    const final=await buildModel(next);const checks=['reported','confirmed'].flatMap(basis=>audit(final,analysisRows(final,{basis})).map(c=>({...c,basis})));

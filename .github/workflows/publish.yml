@@ -1,0 +1,44 @@
+name: Publish report application
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '*.mjs'
+      - '*.html'
+      - '*.css'
+      - 'vendor/**'
+      - '.github/workflows/publish.yml'
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: sgo-monthly-update
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate current data package
+        run: node automation/verify-current.mjs
+      - name: Prepare public report files
+        run: |
+          mkdir -p public-site
+          rsync -a --exclude=.git --exclude=.github --exclude=node_modules --exclude=public-site --exclude=automation/runs ./ public-site/
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: public-site
+      - uses: actions/deploy-pages@v4
+        id: deployment

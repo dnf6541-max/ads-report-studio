@@ -4,7 +4,7 @@ import {diffLatest,eligibleSingleton,reservationAvailable,requestUpperBound} fro
 import {validateDraft,toReview} from './review-contract.mjs';
 import {buildModel,canonical,sha256,selectFields} from '../analysis.mjs';
 import {scenarioEvidence} from '../scenario-review.mjs';
-import {caseAnalysis} from '../case-analysis.mjs';
+import {caseAnalysis,reportCases} from '../case-analysis.mjs';
 import {controlEvidence} from '../extended.mjs';
 const raw={'Report ID':'TEST-1','Report Version':'1','Report Type':'Monthly','Automation System Engaged?':'ADS','Incident Date':'OCT-2026','Reporting Entity':'Test','Crash With':'Passenger Car','SV Pre-Crash Movement':'Stopped','CP Pre-Crash Movement':'Proceeding Straight','SV Contact Area - Rear':'Y','CP Contact Area - Front':'Y','Roadway Type':'Street',Narrative:'The ADS was stopped. Another car struck its rear. ADS remained engaged at impact.'};
 const quote=raw.Narrative;
@@ -45,4 +45,11 @@ test('manual transition and remote operation retain distinct categories',async()
   const d=draft();d.decision='non_ads';d.control={controlCategory:category,controlDetail:category==='remote_direct'?'remote_human_driving':'other',controlEvidence:[quote],reasonCategories:['not_specified']};
   const g=await toReview(d,raw,verify,'test','run');const pkg={reviews:[g],sources:[{name:'test',era:'current',headers:Object.keys(raw),rows:[raw]}],baselineHashes:{current:'old'},cases:[]};const m=await buildModel(pkg);assert.equal(controlEvidence(m.ads[0]).controlCategory,category);assert.equal(m.impact.length,0);
  }
+});
+test('new severe reports join case galleries even when the baseline list has no case entry',async()=>{
+ const r={...raw,'Highest Injury Severity Alleged':'Serious W/ Hospitalization'};
+ const g=await toReview(draft(),r,verify,'test','run');
+ const m=await buildModel({reviews:[g],sources:[{name:'test',era:'current',headers:Object.keys(r),rows:[r]}],baselineHashes:{current:'old'},cases:[]});
+ assert.equal(reportCases(m.ads,[]).length,1);assert.equal(reportCases(m.ads,[])[0].id,r['Report ID']);assert.ok(reportCases(m.ads,[])[0].summary.includes('후부'));
+ const nonAds=structuredClone(m.ads[0]);nonAds.decision='non_ads';assert.ok(caseAnalysis(nonAds));assert.equal(reportCases([nonAds],[]).length,1);
 });

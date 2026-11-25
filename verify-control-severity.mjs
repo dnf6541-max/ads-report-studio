@@ -4,10 +4,10 @@ import zlib from 'node:zlib';
 import PptxGenJS from 'pptxgenjs';
 import JSZip from 'jszip';
 import encoded from './data-base64.mjs?v=20261124.10';
-import {buildModel,analysisRows,SEVERITY,pct} from './analysis.mjs?v=20261125.24';
-import {operatingStateSummary,controlEvidence} from './extended.mjs?v=20261125.24';
-import {figureCatalog,figureDataRows} from './supplement.mjs?v=20261125.24';
-import {buildPptx} from './export-pptx.mjs?v=20261125.24';
+import {buildModel,analysisRows,SEVERITY,pct} from './analysis.mjs?v=20261125.25';
+import {operatingStateSummary,controlEvidence} from './extended.mjs?v=20261125.25';
+import {figureCatalog,figureDataRows} from './supplement.mjs?v=20261125.25';
+import {buildPptx} from './export-pptx.mjs?v=20261125.25';
 
 const model=await buildModel(JSON.parse(zlib.gunzipSync(Buffer.from(encoded,'base64'))));
 const keys=['ads_maintained','on_board_transition','remote_direct','other_non_ads','unresolved'];
