@@ -37,7 +37,7 @@ async function init(){
     if(!globalThis.DecompressionStream)throw new Error('데이터 압축 해제를 지원하는 최신 Chrome, Edge, Safari 또는 Firefox를 사용하세요.');
     // Text-encoded gzip is byte-identical to the source package, and can also
     // be committed through GitHub's browser editor without a binary uploader.
-    const {default:encoded}=await import('./data-base64.mjs?v=20261124.10');
+    const {default:encoded}=await import('./data-base64.mjs?v=9a3a71d1b212174d');
     const packed=Uint8Array.from(atob(encoded),c=>c.charCodeAt(0));
     state.pkg=await new Response(new Blob([packed]).stream().pipeThrough(new DecompressionStream('gzip'))).json();
     state.sources=state.pkg.sources;state.model=await buildModel(state.pkg);try{const saved=JSON.parse(localStorage.getItem('ads-scene-overrides-v1')||'{}');state.pkg.sceneOverrides=Object.fromEntries(Object.entries(saved).filter(([id,v])=>state.model.records.some(r=>r.id===id&&r.narrativeVersion===v.narrativeVersion&&v.sourceFingerprint===sourceFingerprint(r))));}catch{}render();
