@@ -1,5 +1,6 @@
+import {contactScene,contactDiagramSVG} from './contact-diagram.mjs?v=20261125.10';
 /* Editable scenario geometry. Coordinates describe the drawing, never GPS. */
-import {value,COUNTERPART} from './analysis.mjs?v=20261124.30';
+import {value,COUNTERPART} from './analysis.mjs?v=20261125.10';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const redacted=s=>!s||/\[|unknown|redact|personally|^n\/?a$/i.test(s);
 export function locationInfo(r,override={}){
@@ -31,9 +32,9 @@ const CASE_SCENES={
  '30270-7681':{layout:'street',ads:[480,160,0],cp:[445,310,0],paths:[[445,390,450,215],[440,205,380,140]],hits:[[450,210]],context:'뒤차가 ADS 좌후부 접촉 뒤 중앙분리대 쪽으로 이동'},
 };
 export function sceneFor(r,override={}){
- const base=CASE_SCENES[r.id]||{layout:r.roadway==='Intersection'?'intersection':'street',ads:[480,170,0],cp:[340,285,0],paths:[],hits:[],context:'진로가 충분히 공개되지 않아 상대 배치만 표시 · 원문으로 보완'};
- const labels={'30270-16196':['SUV','보행자'],'30270-16028':['상대 승용차','보행자'],'30270-15830':['유턴 차량','자전거'],'30412-6395':['선행 충격 차량','보행자'],'30270-6579':['상대 승용차','관련 대상'],'30270-15896':['SUV','시설물'],'30270-9724':['SUV','대기 차량'],'30270-8968':['중앙선 침범차','SUV'],'30270-11713':['이륜차','승용차']};const names=labels[r.id];const scene={...base,...(names?{cpLabel:names[0],thirdLabel:names[1]}:{}),...override};
- if(!['street','intersection','parking','sequence'].includes(scene.layout)||scene.layout==='sequence'&&!base.sequence)scene.layout=base.layout;
+ const base=CASE_SCENES[r.id]||contactScene(r);
+ const labels={'30270-16196':['SUV','보행자'],'30270-16028':['상대 승용차','보행자'],'30270-15830':['유턴 차량','자전거'],'30412-6395':['선행 충격 차량','보행자'],'30270-6579':['상대 승용차','관련 대상'],'30270-15896':['SUV','시설물'],'30270-9724':['SUV','대기 차량'],'30270-8968':['중앙선 침범차','SUV'],'30270-11713':['이륜차','승용차']};const names=labels[r.id];const scene={...contactScene(r),...base,...(names?{cpLabel:names[0],thirdLabel:names[1]}:{}),...override};
+ if(!['street','intersection','parking','sequence','contact'].includes(scene.layout)||scene.layout==='sequence'&&!base.sequence)scene.layout=base.layout;
  const pos=(p,def)=>Array.isArray(p)&&p.length===3&&p.every(x=>Number.isFinite(+x))?[Math.max(50,Math.min(750,+p[0])),Math.max(60,Math.min(380,+p[1])),+p[2]%360]:def;
  scene.ads=pos(scene.ads,base.ads);scene.cp=pos(scene.cp,base.cp);scene.third=scene.third?pos(scene.third,base.third||[300,300,0]):null;
  scene.cpLabel=scene.cpLabel||COUNTERPART[r.counterpart]||r.counterpart||'상대';
@@ -42,6 +43,7 @@ export function sceneFor(r,override={}){
 }
 export function sceneSVG(r,override={}){
  const s=sceneFor(r,override),l=locationInfo(r,override);
+ if(s.layout==='contact')return contactDiagramSVG(r,s);
  if(s.layout==='sequence')return sequenceSVG(r,s,l);
  const line=(a,b,c,d,col='#fff',width=3,dash='')=>`<line x1="${a}" y1="${b}" x2="${c}" y2="${d}" stroke="${col}" stroke-width="${width}" ${dash?`stroke-dasharray="${dash}"`:''}/>`;
  const actor=(p,label,color)=>{const [x,y,angle]=p;if(/보행자|자전거|이륜차|시설물|관련 대상|옹벽|연석|바퀴|노면/.test(label))return `<circle cx="${x}" cy="${y}" r="30" fill="white" stroke="${color}" stroke-width="4"/><text x="${x}" y="${y+5}" text-anchor="middle" font-size="14" font-weight="700" fill="${color}">${esc(label)}</text>`;return `<g transform="translate(${x} ${y}) rotate(${angle})"><rect x="-28" y="-48" width="56" height="96" rx="13" fill="${color}"/><rect x="-21" y="-33" width="42" height="20" rx="5" fill="#d8e7ed"/><rect x="-21" y="26" width="42" height="12" rx="4" fill="#bcced5"/></g><rect x="${x-62}" y="${y-13}" width="124" height="26" rx="8" fill="white" opacity=".95"/><text x="${x}" y="${y+6}" text-anchor="middle" font-size="17" font-weight="700" fill="${color}">${esc(label)}</text>`;};

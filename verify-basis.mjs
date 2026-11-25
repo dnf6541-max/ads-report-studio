@@ -1,14 +1,15 @@
+import {scenarioEvidence,scenarioReviewAudit} from './scenario-review.mjs?v=20261125.10';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import zlib from 'node:zlib';
 import PptxGenJS from 'pptxgenjs';
 import JSZip from 'jszip';
 import encoded from './data-base64.mjs?v=20261124.10';
-import {buildModel,analysisRows,analysisBasis,aggregate,audit,sample,CAR,VRU,scenarioKey,csvExport,parseCSV} from './analysis.mjs?v=20261124.30';
-import {figureCatalog,figureDataRows,extraAudit} from './supplement.mjs?v=20261124.30';
-import {extendedAudit,insightSummary,controlSummary} from './extended.mjs?v=20261124.30';
-import {contributionAudit,contributionSummary} from './contribution.mjs?v=20261124.30';
-import {buildPptx} from './export-pptx.mjs?v=20261124.30';
+import {buildModel,analysisRows,analysisBasis,aggregate,audit,sample,CAR,VRU,scenarioKey,csvExport,parseCSV} from './analysis.mjs?v=20261125.10';
+import {figureCatalog,figureDataRows,extraAudit} from './supplement.mjs?v=20261125.10';
+import {extendedAudit,insightSummary,controlSummary} from './extended.mjs?v=20261125.10';
+import {contributionAudit,contributionSummary} from './contribution.mjs?v=20261125.10';
+import {buildPptx} from './export-pptx.mjs?v=20261125.10';
 const pkg=JSON.parse(zlib.gunzipSync(Buffer.from(encoded,'base64'))),m=await buildModel(pkg);
 const catalog=basis=>figureCatalog(m,{basis});
 const fig=(list,id)=>list.find(f=>f.id===id);
@@ -32,20 +33,20 @@ test('annual and company intersections preserve both analysis populations',()=>{
   assert.equal(analysisRows(m,{basis,from:'2030-01'}).length,0);
  }
 });
-test('the additional 202 car reports stay unreviewed instead of becoming other or an invented type',()=>{
+test('the additional 202 car reports are now reviewed with explicit unresolved states',()=>{
  const all=analysisRows(m),confirmed=analysisRows(m,{basis:'confirmed'}),ids=new Set(confirmed.map(r=>r.id));
  const extra=all.filter(r=>!ids.has(r.id));assert.equal(extra.length,279);assert.equal(extra.filter(r=>CAR.has(r.counterpart)).length,202);
  assert.equal(all.filter(r=>CAR.has(r.counterpart)).length,2489);assert.equal(all.filter(r=>VRU.has(r.counterpart)).length,103);
  assert.equal(confirmed.filter(r=>VRU.has(r.counterpart)).length,87);
- const a=aggregate(all),b=aggregate(confirmed);assert.equal(a.scenarios.find(x=>x.key==='U').count,202);
- assert.equal(a.scenarios.find(x=>x.key==='R').count,580);assert.equal(b.scenarios.find(x=>x.key==='R').count,580);
- for(const r of extra.filter(r=>CAR.has(r.counterpart)))assert.equal(scenarioKey(r),'U');
+ const a=aggregate(all),b=aggregate(confirmed);assert.equal(a.scenarios.find(x=>x.key==='U').count,0);
+ assert.ok(a.scenarios.find(x=>x.key==='R').count>=b.scenarios.find(x=>x.key==='R').count);
+ for(const r of extra.filter(r=>CAR.has(r.counterpart)))assert.ok(scenarioEvidence(r),r.id);
  for(const year of a.years){const cars=all.filter(r=>r.month.slice(0,4)===year.key&&CAR.has(r.counterpart));assert.equal(aggregate(cars).scenarios.reduce((s,x)=>s+x.count,0),cars.length);}
  const collision=fig(catalog('reported'),'collision-form');assert.equal(collision.items.find(x=>x.key==='unreviewed').count,202);assert.equal(collision.items.find(x=>x.key==='other_insufficient').count,1404);
 });
 test('all figures, status comparisons, insights and CSV metadata follow the selected basis',()=>{
  for(const [basis,n,cars,vru,surface]of [['reported',3031,2489,103,1480],['confirmed',2752,2287,87,1296]]){
-  const fs=catalog(basis),rows=analysisRows(m,{basis});assert.equal(fs.length,56);
+  const fs=catalog(basis),rows=analysisRows(m,{basis});assert.equal(fs.length,204);
   for(const [id,total]of [['counterparts',n],['car-situations',cars],['collision-form',cars],['day-night',n],['operating-state',n],['operator',n],['road-surface',surface],['vru-types',vru]]){
    const f=fig(fs,id);assert.equal(f.denominator,total,id);assert.equal(f.items.reduce((s,x)=>s+x.count,0),total,id);
    const csv=parseCSV(csvExport(figureDataRows(f)));assert.ok(csv.rows.every(x=>x['분석기준']===analysisBasis({basis}).label));
@@ -56,8 +57,8 @@ test('all figures, status comparisons, insights and CSV metadata follow the sele
   assert.equal(fig(fs,'severe-counterparts').denominator,14);
   assert.ok(insightSummary(m,{basis},'cases').items[0][1].includes(`${n}건`));
   assert.ok(fs.every(f=>f.insight&&f.basis===(f.tab==='domestic'?'domestic':basis)));
-  const checks=[...audit(m,rows),...extraAudit(m,rows,rows),...extendedAudit(m,rows,rows),...contributionAudit(m,rows)];
-  assert.equal(checks.length,58);assert.ok(checks.every(x=>x.ok),JSON.stringify(checks.filter(x=>!x.ok)));
+  const checks=[...audit(m,rows),...extraAudit(m,rows,rows),...extendedAudit(m,rows,rows),...contributionAudit(m,rows),...scenarioReviewAudit(rows)];
+  assert.equal(checks.length,64);assert.ok(checks.every(x=>x.ok),JSON.stringify(checks.filter(x=>!x.ok)));
   assert.ok(sample(rows,20).every(r=>rows.includes(r)));assert.equal(contributionSummary(rows).details.length,134);
  }
  const a=catalog('reported'),b=catalog('confirmed');assert.deepEqual(a.filter(f=>f.tab==='domestic'),b.filter(f=>f.tab==='domestic'));

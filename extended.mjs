@@ -1,8 +1,8 @@
-import {placeGroup} from './environment.mjs?v=20261124.30';
-import {analysisRows,analysisBasis} from './analysis.mjs?v=20261124.30';
+import {placeGroup} from './environment.mjs?v=20261125.10';
+import {analysisRows,analysisBasis} from './analysis.mjs?v=20261125.10';
 /* Shared insight and evidence calculations for HTML, CSV and native PPTX. */
-import {CAR,VRU,COUNTERPART,SEVERITY,SCENARIOS,value,countBy,pct,aggregate,filtered} from './analysis.mjs?v=20261124.30';
-import {environmentSummary,environmentAudit,ROADWAY,COVERAGE} from './environment.mjs?v=20261124.30';
+import {CAR,VRU,COUNTERPART,SEVERITY,SCENARIOS,value,countBy,pct,aggregate,filtered} from './analysis.mjs?v=20261125.10';
+import {environmentSummary,environmentAudit,ROADWAY,COVERAGE} from './environment.mjs?v=20261125.10';
 import {CONTROL_REVIEW,CASE_REVIEW,COLLISION_REVIEW} from './review-data.mjs?v=20261124.10';
 export const CONTROL={on_board_transition:'차내 수동전환 확인',remote_direct:'원격 직접 제어 확인',manual_ongoing:'수동운행 · 전환 시점 불명',disengaged_stationary:'ADS 해제 후 정지',control_unclear:'해제·개입만 확인',unreviewed:'세부 검토 필요'};
 export const REASONS={external_traffic_hazard:'다른 이용자·장애물 대응',ads_behavior_system_issue:'ADS 행동·시스템 관련',odd_boundary:'ODD 이탈',planned_operational_manual_maneuver:'계획된 수동 조작',other_stated:'그 외 명시된 사유',not_specified:'전환 사유 미명시'};
@@ -30,7 +30,7 @@ export function insightSummary(model,filter={},tab='overview'){
  const note='보고된 사고의 구성과 경위입니다. 운행거리·노출량을 보정한 사고위험이나 법적 과실을 뜻하지 않습니다.';
  if(tab==='overview'){
   const rear=a.scenarios.filter(x=>['01','02'].includes(x.key)).reduce((s,x)=>s+x.count,0),back=a.scenarios.find(x=>x.key==='03')?.count||0;
-  return {title:'사고에서 드러난 특징',note,items:[['자동차 상대 사고 중심',`전체 ${num(n)}건 중 자동차 상대 ${share(a.cars.length,n)}. 고정물·비자동차 상대는 별도 구성으로 확인합니다.`],['후미추돌과 상대차 후진',`자동차 상대 중 정지·직진·감속 후미추돌 ${share(rear,a.cars.length)}, 상대차 후진 ${share(back,a.cars.length)}입니다.${a.scenarios.some(x=>x.key==='U')?` 상황 분류 미검토 ${a.scenarios.find(x=>x.key==='U').count}건을 분모에 포함합니다.`:''}`],['중상·사망은 누구와 충돌했나',high.rows.length?`${high.serious}건 중상 · ${high.fatal}건 사망. 신고된 상대는 ${types}입니다. 아래 상세표에서 접촉 순서와 피해자를 확인합니다.`:'선택 범위에 중상·사망 보고가 없습니다.']]};
+  return {title:'사고에서 드러난 특징',note,items:[['자동차 상대 사고 중심',`전체 ${num(n)}건 중 자동차 상대 ${share(a.cars.length,n)}. 고정물·비자동차 상대는 별도 구성으로 확인합니다.`],['후미추돌과 상대차 후진',`자동차 상대 중 정지·주행·감속 후미추돌 ${share(rear,a.cars.length)}, 상대차 후진 ${share(back,a.cars.length)}입니다. 대조 확인 사례의 집계이며, 미확정·미검토 ${a.scenarios.filter(x=>['C','I','U'].includes(x.key)).reduce((n,x)=>n+x.count,0)}건도 분모에 포함합니다.`],['중상·사망은 누구와 충돌했나',high.rows.length?`${high.serious}건 중상 · ${high.fatal}건 사망. 신고된 상대는 ${types}입니다. 아래 상세표에서 접촉 순서와 피해자를 확인합니다.`:'선택 범위에 중상·사망 보고가 없습니다.']]};
  }
  if(tab==='status')return {title:'운행상태에서 본 특징',note,items:[['사고 당시 ADS 운행',`${ads.length}건 중 ${share(rows.filter(r=>r.decision==='include').length,ads.length)}에서 사고 당시 ADS 운행이 확인됩니다.`],['수동전환과 원격 제어 분리',`차내 수동전환 ${c.manual.length}건. 원격 직접 제어 ${c.remote.length}건 중 원격 운전 ${c.remoteDriving}건, 기어 조작만 확인 ${c.remoteGear}건입니다.`],['전환 계기가 명시된 경우',`차내 전환 ${c.manual.length}건 중 사유 미명시 ${c.reasons.find(x=>x.key==='not_specified').count}건. 다른 이용자·장애물 대응 ${c.reasons.find(x=>x.key==='external_traffic_hazard').count}건이 명시됩니다. 사유는 복수 가능.`]]};
  if(tab==='vru'){

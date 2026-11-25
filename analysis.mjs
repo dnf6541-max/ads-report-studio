@@ -1,12 +1,13 @@
+import {scenarioClassification,SCENARIO_PENDING_LABELS} from './scenario-review.mjs?v=20261125.10';
 /* Deterministic SGO aggregation. Shared by the browser and Node verification. */
 export const STATUS = {include:'사고 당시 ADS 운행 확인',non_ads:'사고 당시 수동·원격·해제 상태',insufficient:'사고 당시 상태 확인 부족',conflict:'운행상태 자료 불일치',outside:'ADS 시스템 분석 밖',pending:'재검토 필요'};
 export const SEVERITY = {none:'부상 보고 없음',minor:'경상 (Minor)',moderate:'중등도 (Moderate)',serious:'중상 (Serious)',fatal:'사망 (Fatality)',unknown:'불명'};
-export const SCENARIOS = {'01':'정지 중 후미추돌','02':'직진·감속 중 후미추돌','03':'상대차 후진','04':'상대차 통과·추월','05':'상대차 회전','06':'상대차 진로변경·합류','07':'반대차로 진입·역주행','08':'상대차 도로 진입','R':'그 외 자동차 사고'};
+export const SCENARIOS = {'01':'정지 중 후미추돌','02':'주행·감속 중 후미추돌','03':'상대차 후진','04':'상대차 통과·추월','05':'상대차 회전','06':'상대차 진로변경·합류','07':'반대차로 진입·역주행','08':'상대차 도로 진입','R':'그 외 자동차 사고'};
 export const CAR = new Set(['Passenger Car','SUV','Pickup Truck','Heavy Truck','Van','Bus','First Responder Vehicle']);
 export const VRU = new Map([['Non-Motorist: Pedestrian','보행자'],['Non-Motorist: Cyclist','자전거'],['Motorcycle','이륜차'],['Non-Motorist: Scooter - Skateboard','스쿠터·스케이트보드']]);
 export const COUNTERPART = {'Passenger Car':'승용차','SUV':'SUV','Pickup Truck':'픽업트럭','Heavy Truck':'대형 화물차','Van':'밴','Bus':'버스','First Responder Vehicle':'긴급차량','Other, see Narrative':'기타 상대 (경위 참고)','Other Fixed Object':'기타 고정물','Pole / Tree':'기둥·나무','Non-Motorist: Cyclist':'자전거','Motorcycle':'이륜차','Animal':'동물','Non-Motorist: Pedestrian':'보행자','Non-Motorist: Other':'기타 비자동차 이용자','Non-Motorist: Scooter - Skateboard':'스쿠터·스케이트보드','Unknown':'불명'};
 export const MOVEMENT = {'Stopped':'정지','Parked':'주차','Proceeding Straight':'직진','Making Left Turn':'좌회전','Making Right Turn':'우회전','Making U-Turn':'유턴','Changing Lanes':'차로변경','Merging':'합류','Passing':'통과·추월','Backing':'후진','Entering Traffic':'도로 진입','Crossing into Opposing Lane':'반대차로 진입','Traveling Wrong Way':'역주행','Parking Maneuver':'주차 조작','Lane / Road Departure':'차로·도로 이탈','Other, see Narrative':'기타 (경위 참고)','Unknown':'불명','NM Crossing Roadway':'도로 횡단','NM Moving Alongside Roadway':'도로 옆 이동','NM Moving on Sidewalk':'보도 이동','NM in Roadway - Other':'도로 내 기타','NM Waiting to Cross Roadway':'횡단 대기'};
-export const DRIVER = {'None':'운전업무 담당자 없음','In-Vehicle (Commercial / Test)':'차내 운전자·운영자','Remote (Commercial / Test)':'원격 운영자','In-Vehicle and Remote (Commercial / Test)':'차내 및 원격 운영자','Consumer':'소비자 운전자','Other, see Narrative':'기타','Unknown':'불명','':'미기재'};
+export const DRIVER = {'None':'운전업무 담당자 없음','In-Vehicle (Commercial / Test)':'차내 담당자','Remote (Commercial / Test)':'원격 담당자','In-Vehicle and Remote (Commercial / Test)':'차내＋원격 담당자','Consumer':'소비자 운전자','Other, see Narrative':'기타','Unknown':'불명','':'미기재'};
 export const LIGHTING = {'Daylight':'주광','Dawn / Dusk':'새벽·황혼','Dark - Lighted':'어두움·조명 있음','Dark - Not Lighted':'어두움·조명 없음','Dark - Unknown Lighting':'어두움·조명 불명','Other, see Narrative':'기타 조명'};
 const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
 export const value = (r,k) => String(r?.[k] ?? '').trim();
@@ -97,20 +98,21 @@ export async function buildModel(pkg,sources=pkg.sources) {
 }
 function normalize(raw,g,evidence,sourceNames,sourceMeta){
   const id=value(raw,'Report ID'),meta=sourceMeta?.get(`${id}|${raw['Report Version']}`);
-  return {id,raw,schema:meta?.era||'',sourceFields:meta?.headers||[],evidenceRaw:evidence,narrative:value(evidence,'Narrative'),members:g.members,
+  const r={id,raw,schema:meta?.era||'',sourceFields:meta?.headers||[],evidenceRaw:evidence,narrative:value(evidence,'Narrative'),members:g.members,
     version:value(raw,'Report Version'),narrativeVersion:String(g.narrativeVersion),
     source:sourceNames.get(`${id}|${raw['Report Version']}`),system:value(raw,'Automation System Engaged?').split(',')[0],
-    decision:g.decision,reason:g.reason,method:g.method||'',scenario:g.scenario||'',month:parseMonth(raw['Incident Date']),
+    decision:g.decision,reason:g.reason,method:g.method||'',scenarioLegacy:g.scenario||'',reviewRawFingerprint:g.fingerprints?.[id]||'',reviewNarrativeFingerprint:g.narrativeFingerprint||'',month:parseMonth(raw['Incident Date']),
     company:value(raw,'Reporting Entity'),counterpart:value(raw,'Crash With'),severity:severity(raw['Highest Injury Severity Alleged']),
     time:dayNight(raw),lighting:Object.hasOwn(LIGHTING,value(raw,'Lighting'))?value(raw,'Lighting'):'',
     roadway:value(raw,'Roadway Type'),driver:value(raw,'Driver / Operator Type')};
+  r.scenarioReviewApplicable=CAR.has(r.counterpart);r.scenario=r.scenarioReviewApplicable?scenarioClassification(r):'';return r;
 }
 export function filtered(rows,{from='',to='',company=''}={}){return rows.filter(r=>(!from||r.month&&r.month>=from)&&(!to||r.month&&r.month<=to)&&(!company||r.company===company));}
 export const ANALYSIS_BASES={reported:{label:'보고된 검수 대상',short:'검수 대상',description:'ADS 시스템으로 보고된 운행상태 비교 대상. 수동·원격·상태 확인 부족·자료 불일치 포함.',source:'ads'},confirmed:{label:'사고 당시 ADS 운행 확인',short:'ADS 운행 확인',description:'검수 대상 중 사고 당시 ADS 운행이 확인된 보고만 포함.',source:'impact'}};
 export function analysisBasis(filter={}){const key=filter.basis??'reported';if(!Object.hasOwn(ANALYSIS_BASES,key))throw new Error('유효하지 않은 분석 기준입니다.');return {key,...ANALYSIS_BASES[key]};}
 export function analysisRows(model,filter={}){return filtered(model[analysisBasis(filter).source],filter);}
-export const scenarioKey=r=>Object.hasOwn(SCENARIOS,r.scenario)?r.scenario:'U';
-export const scenarioLabel=r=>CAR.has(r.counterpart)?(SCENARIOS[scenarioKey(r)]||'상황 분류 미검토'):'자동차 대표 유형 대상 밖';
+export const scenarioKey=r=>Object.hasOwn({...SCENARIOS,...SCENARIO_PENDING_LABELS},r.scenario)?r.scenario:'U';
+export const scenarioLabel=r=>CAR.has(r.counterpart)?(SCENARIOS[scenarioKey(r)]||SCENARIO_PENDING_LABELS[scenarioKey(r)]):'자동차 대표 유형 대상 밖';
 export function countBy(rows,key,order=[]){const counts=new Map(order.map(k=>[k,0]));for(const r of rows){const k=typeof key==='function'?key(r):r[key];counts.set(k,(counts.get(k)||0)+1);}return [...counts].map(([key,count])=>({key,count}));}
 export function counterpartGroup(r){
   const c=r.counterpart;
@@ -127,9 +129,9 @@ export function movementGroup(r){const m=value(r.raw,'SV Pre-Crash Movement');if
 export function contactCounts(rows){const areas={전면:['Front Left','Front','Front Right'],측면:['Left','Right'],후면:['Rear Left','Rear','Rear Right'],상하부:['Top','Bottom']};const out=Object.entries(areas).map(([key,parts])=>({key,count:rows.filter(r=>parts.some(p=>value(r.raw,`SV Contact Area - ${p}`)==='Y')).length}));out.push({key:'미기재·불명',count:rows.filter(r=>!Object.values(areas).flat().some(p=>value(r.raw,`SV Contact Area - ${p}`)==='Y')).length});return out;}
 export function aggregate(rows){
   const cars=rows.filter(r=>CAR.has(r.counterpart)),vru=rows.filter(r=>VRU.has(r.counterpart));
-  const scenarios=countBy(cars,scenarioKey,Object.keys(SCENARIOS));
+  const scenarios=countBy(cars,scenarioKey,[...Object.keys(SCENARIOS),...Object.keys(SCENARIO_PENDING_LABELS)]);
   return {n:rows.length,cars,vru,counterparts:countBy(rows,counterpartGroup).sort((a,b)=>b.count-a.count),
-    scenarios:scenarios.map(x=>({...x,label:SCENARIOS[x.key]||'상황 분류 미검토'})),
+    scenarios:scenarios.map(x=>({...x,label:SCENARIOS[x.key]||SCENARIO_PENDING_LABELS[x.key]})),
     time:countBy(rows,'time',['day','night','unknown']),lighting:countBy(rows.filter(r=>r.lighting),'lighting'),
     severity:countBy(rows,'severity',Object.keys(SEVERITY)),roadway:countBy(rows,'roadway'),
     years:countBy(rows,r=>r.month.slice(0,4)).sort((a,b)=>a.key.localeCompare(b.key)),contact:contactCounts(rows)};
@@ -143,7 +145,7 @@ export function audit(model,rows=model.impact){
   check('사고 상대 분류 합계',a.counterparts.reduce((n,x)=>n+x.count,0),rows.length);
   check('주·야간·시간 불명 합계',a.time.reduce((n,x)=>n+x.count,0),rows.length);
   check('피해수준 분류 합계',a.severity.reduce((n,x)=>n+x.count,0),rows.length);
-  check('자동차 대표 유형 + 그 외 + 상황 분류 미검토',a.scenarios.reduce((n,x)=>n+x.count,0),a.cars.length);
+  check('자동차 확정 유형 + 자료 상충 + 근거 부족 + 미검토',a.scenarios.reduce((n,x)=>n+x.count,0),a.cars.length);
   check('보고번호 중복 없음',new Set(rows.map(r=>r.id)).size,rows.length);
   const selectedIds=new Map(model.impact.map(r=>[r.id,r]));
   const cited=model.pkg.cases.filter(c=>selectedIds.has(c.id));

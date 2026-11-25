@@ -5,12 +5,12 @@ import zlib from 'node:zlib';
 import PptxGenJS from 'pptxgenjs';
 import JSZip from 'jszip';
 import encoded from './data-base64.mjs?v=20261124.10';
-import {buildModel,analysisRows} from './analysis.mjs?v=20261124.30';
-import {placeSummary,placeAnnual,placeGroup,placeKey,placeStatus} from './environment.mjs?v=20261124.30';
-import {figureCatalog,figureDataRows} from './supplement.mjs?v=20261124.30';
-import {sceneFor,sceneSVG,caseSceneIds} from './scenes.mjs?v=20261124.30';
-import {caseGalleryMarkup} from './case-gallery.mjs?v=20261124.30';
-import {buildPptx} from './export-pptx.mjs?v=20261124.30';
+import {buildModel,analysisRows} from './analysis.mjs?v=20261125.10';
+import {placeSummary,placeAnnual,placeGroup,placeKey,placeStatus} from './environment.mjs?v=20261125.10';
+import {figureCatalog,figureDataRows} from './supplement.mjs?v=20261125.10';
+import {sceneFor,sceneSVG,caseSceneIds} from './scenes.mjs?v=20261125.10';
+import {caseGalleryMarkup} from './case-gallery.mjs?v=20261125.10';
+import {buildPptx} from './export-pptx.mjs?v=20261125.10';
 const pkg=JSON.parse(zlib.gunzipSync(Buffer.from(encoded,'base64'))),m=await buildModel(pkg);
 test('Roadway Type is present in both source schemas; only 2 reviewed records actually report Unknown',()=>{
  assert.ok(pkg.sources.every(s=>s.headers.includes('Roadway Type')));
@@ -38,7 +38,7 @@ test('place charts and VRU tables reconcile without folding known places into mi
  }
 });
 test('all 14 serious/fatal and 6 priority cases have visible, case-specific drawings',()=>{
- const fs=figureCatalog(m),cases=fs.filter(f=>f.kind==='case');assert.equal(cases.length,20);assert.equal(new Set(cases.map(f=>f.record.id)).size,19);
+ const fs=figureCatalog(m,{contribution:'priority'}),cases=fs.filter(f=>f.kind==='case');assert.equal(cases.length,20);assert.equal(new Set(cases.map(f=>f.record.id)).size,19);
  assert.equal(caseSceneIds.length,19);
  for(const [tab,n]of [['cases',14],['contribution',6]]){
   const figs=cases.filter(f=>f.tab===tab),html=caseGalleryMarkup(figs);assert.equal(figs.length,n);assert.equal((html.match(/data-case-id=/g)||[]).length,n);assert.equal((html.match(/<svg /g)||[]).length,n);assert.ok(!html.includes('<details'));
@@ -50,10 +50,10 @@ test('all 14 serious/fatal and 6 priority cases have visible, case-specific draw
 test('dedicated case PPTX exports every selected case as editable native geometry',async()=>{
  fs.mkdirSync(new URL('./qa/',import.meta.url),{recursive:true});
  for(const [tab,n]of [['cases',14],['contribution',6]]){
-  const p=buildPptx(PptxGenJS,m,{}, {scope:'cases',tab}),z=await JSZip.loadAsync(await p.write({outputType:'uint8array',compression:true}));
+  const p=buildPptx(PptxGenJS,m,{contribution:'priority'}, {scope:'cases',tab}),z=await JSZip.loadAsync(await p.write({outputType:'uint8array',compression:true}));
   const files=Object.keys(z.files).filter(x=>/^ppt\/slides\/slide\d+\.xml$/.test(x));assert.equal(files.length,n);
   const xml=(await Promise.all(files.map(x=>z.file(x).async('string')))).join('\n');assert.ok(!xml.includes('<p:pic>'));assert.ok(!xml.includes('그 외·불명'));
-  for(const f of figureCatalog(m).filter(f=>f.tab===tab&&f.kind==='case'))assert.ok(xml.includes(f.record.id),f.record.id);
+  for(const f of figureCatalog(m,{contribution:'priority'}).filter(f=>f.tab===tab&&f.kind==='case'))assert.ok(xml.includes(f.record.id),f.record.id);
   await p.writeFile({fileName:new URL(`./qa/all-${tab}.pptx`,import.meta.url).pathname,compression:true});
  }
  const p=buildPptx(PptxGenJS,m,{from:'2026-01'}, {scope:'cases',tab:'cases'}),z=await JSZip.loadAsync(await p.write({outputType:'uint8array',compression:true}));assert.equal(Object.keys(z.files).filter(x=>/^ppt\/slides\/slide\d+\.xml$/.test(x)).length,5);

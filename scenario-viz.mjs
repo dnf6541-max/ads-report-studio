@@ -1,0 +1,15 @@
+/* Illustrative geometry of the eight definitions; not reconstructions of individual incidents. */
+import {SCENARIOS,pct,CAR} from './analysis.mjs?v=20261125.10';
+export const SCENARIO_SCHEMES={
+ '01':{sv:[430,110,0],cp:[430,235,0],arrows:[[430,210,430,165]],hit:[430,151],caption:'정지한 보고 차량의 뒤에 상대차가 직접 접촉'},
+ '02':{sv:[430,110,0],cp:[430,235,0],arrows:[[430,210,430,165],[430,70,430,25]],hit:[430,151],caption:'주행·감속하는 보고 차량 뒤에 상대차가 직접 접촉'},
+ '03':{sv:[430,200,0],cp:[430,75,0],arrows:[[430,118,430,155]],hit:[430,157],caption:'상대차가 후진하여 보고 차량에 접촉'},
+ '04':{sv:[430,165,0],cp:[330,220,0],arrows:[[330,170,330,95]],hit:[391,183],caption:'차로변경·회전이 확정되지 않은 측방 통과 접촉'},
+ '05':{sv:[430,195,0],cp:[285,75,90],arrows:[[325,75,365,75],[365,75,400,153]],hit:[403,153],caption:'상대차의 회전 경로가 보고 차량 경로와 교차'},
+ '06':{sv:[430,135,0],cp:[315,235,0],arrows:[[315,185,393,161]],hit:[393,161],caption:'상대차가 보고 차량 차로로 변경·합류'},
+ '07':{sv:[430,230,0],cp:[315,70,180],arrows:[[315,112,393,185]],hit:[403,185],caption:'상대차가 반대차로에 진입하거나 역주행'},
+ '08':{sv:[430,185,0],cp:[590,100,270],arrows:[[550,100,475,150]],hit:[467,150],caption:'상대차가 출입구·주차공간에서 주행로로 진입'}
+};
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+export function scenarioDiagramSVG(code){const s=SCENARIO_SCHEMES[code];if(!s)return '';const car=(p,c,label)=>`<g transform="translate(${p[0]} ${p[1]}) rotate(${p[2]})"><rect x="-29" y="-43" width="58" height="86" rx="12" fill="${c}"/><rect x="-22" y="-32" width="44" height="18" rx="4" fill="#dae7ec"/></g><text x="${p[0]}" y="${p[1]+6}" text-anchor="middle" font-size="14" fill="white">${label}</text>`;const arrows=s.arrows.map(([x1,y1,x2,y2])=>{const a=Math.atan2(y2-y1,x2-x1);return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#d58a3b" stroke-width="4"/><path d="M${x2},${y2} L${x2-13*Math.cos(a)+6*Math.sin(a)},${y2-13*Math.sin(a)-6*Math.cos(a)} L${x2-13*Math.cos(a)-6*Math.sin(a)},${y2-13*Math.sin(a)+6*Math.cos(a)}Z" fill="#d58a3b"/>`;}).join('');return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 340" role="img" aria-label="${esc(s.caption)}"><rect width="800" height="340" fill="#f3f7f9"/><rect x="250" width="250" height="285" fill="#e0e9ed"/><line x1="375" y1="0" x2="375" y2="285" stroke="white" stroke-width="3" stroke-dasharray="10 9"/>${car(s.sv,'#147e79','보고차')}${car(s.cp,'#607886','상대차')}${arrows}<circle cx="${s.hit[0]}" cy="${s.hit[1]}" r="9" fill="#d58a3b" stroke="white" stroke-width="3"/><text x="400" y="315" text-anchor="middle" font-size="20" fill="#244959">${esc(s.caption)}</text></svg>`;}
+export function scenarioFigures(rows){const cars=rows.filter(r=>CAR.has(r.counterpart));return Object.keys(SCENARIO_SCHEMES).map(code=>{const count=cars.filter(r=>r.scenario===code).length;return {id:'scenario-diagram-'+code,tab:'overview',kind:'scenario',code,title:SCENARIOS[code],count,denominator:cars.length,description:SCENARIO_SCHEMES[code].caption,note:'유형 정의를 설명하는 개략도. 개별 보고의 실제 위치·방향·과실을 재현한 그림이 아님. 경위·양쪽 행동·접촉부위 대조 확인 사례만 집계.',insight:`대조 확인 ${count}건 · 선택 자동차 상대 ${cars.length}건 대비 ${pct(count,cars.length)}%.`};});}
